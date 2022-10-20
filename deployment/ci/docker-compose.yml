@@ -1,0 +1,25 @@
+version: '3.8'
+services:
+  postgresql:
+    image: postgres:14.3-alpine
+    hostname: postgresql
+    container_name: postgresql
+    restart: always
+    command: -p 5435
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=faceit
+    ports:
+      - "5435:5435"
+    volumes:
+      - postgresql:/var/lib/postgresql/data
+      - ../../init/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - faceit
+volumes:
+  postgresql:
+    driver: local
+networks:
+  faceit:
+    name: faceit

@@ -1,0 +1,10 @@
+postgresql:
+  HOST: postgresql
+  NAME: faceit
+  PASSWORD: password
+  PORT: 5438
+  USER: postgres
+grpc:
+  ADDR: grpc_server
+  PORT: 50051
+SECRET: secret

@@ -1,0 +1,99 @@
+version: '3.8'
+services:
+  postgresql:
+    image: postgres:14.3-alpine
+    hostname: postgresql
+    container_name: postgresql
+    restart: always
+    command: -p 5438
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=faceit
+    ports:
+      - "5438:5438"
+    volumes:
+      - postgresql:/var/lib/postgresql/data
+      - ../../init/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - faceit
+  grpc_server:
+    build:
+      context: ../
+      dockerfile: build/grpc_event_server/Dockerfile
+    container_name: grpc_server
+    pull_policy: build
+    restart: always
+    environment:
+      - ENV=docker
+    depends_on:
+      - postgresql
+    networks:
+      - faceit
+  user:
+    build:
+      context: ../
+      dockerfile:  build/user/Dockerfile
+    container_name: user_service
+    pull_policy: build
+    ports:
+      - "8089:8089"
+    restart: always
+    environment:
+      - ENV=docker
+    depends_on:
+      - postgresql
+    networks:
+      - faceit
+  auth:
+    build:
+      context: ../
+      dockerfile: build/auth/Dockerfile
+    container_name: auth_service
+    pull_policy: build
+    ports:
+      - "8109:8109"
+    restart: always
+    environment:
+      - ENV=docker
+    depends_on:
+      - postgresql
+    networks:
+      - faceit
+  user_grpc:
+    build:
+      context: ../
+      dockerfile:  build/user_grpc/Dockerfile
+    container_name: user_grpc
+    hostname: user_grpc
+    pull_policy: build
+    ports:
+      - "8092:8092"
+    restart: always
+    environment:
+      - ENV=docker
+    depends_on:
+      - postgresql
+    networks:
+      - faceit
+  auth_grpc:
+    build:
+      context: ../
+      dockerfile: build/auth_grpc/Dockerfile
+    container_name: auth_grpc
+    pull_policy: build
+    ports:
+      - "8110:8110"
+    restart: always
+    environment:
+      - ENV=docker
+    depends_on:
+      - postgresql
+    networks:
+      - faceit
+volumes:
+  postgresql:
+    driver: local
+networks:
+  faceit:
+    name: faceit

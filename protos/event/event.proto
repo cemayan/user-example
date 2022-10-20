@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package protos;
+option go_package = "protos/event/";
+
+enum EventName {
+  USER_CREATED = 0;
+  USER_UPDATED = 1;
+  USER_DELETED = 2;
+}
+
+enum AggregateType {
+  USER = 0;
+}
+
+
+message Events {
+  string  aggregate_id = 1;
+  AggregateType aggregate_type = 2;
+  bytes event_data = 3;
+  int64 event_date = 4;
+  EventName event_name = 5;
+  string InternalId = 6;
+}
+
+message Response {
+  string message = 1;
+  bytes data = 2;
+  int32  statusCode = 3;
+}
+
+service EventGrpcService {
+  rpc HandleEvent(stream Events) returns (stream Response) {}
+}
