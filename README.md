@@ -1,5 +1,7 @@
 # faceit-technical-test
 
+[![Faceit](https://github.com/cemayan/faceit-technical-test/actions/workflows/push.yml/badge.svg?branch=main)](https://github.com/cemayan/faceit-technical-test/actions/workflows/push.yml)
+
 ### Introduction
 
 The project consists of five microservices
@@ -33,6 +35,11 @@ You can start it in docker environment
 
 ```shell
  docker-compose -f deployment/docker-compose.yml  up
+```
+
+You can deploy to k8s
+```shell
+skaffold deploy
 ```
 ---
 

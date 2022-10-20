@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: build-auth_grpc
+  labels:
+    app: build-auth_grpc
+spec:
+  ports:
+  - port: 8110
+    protocol: TCP
+  clusterIP: None
+  selector:
+    app: build-auth_grpc
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: build-auth_grpc
+  labels:
+    app: build-auth_grpc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: build-auth_grpc
+  template:
+    metadata:
+      labels:
+        app: build-auth_grpc
+    spec:
+      containers:
+      - name: build-auth_grpc
+        image: build-auth_grpc

@@ -1,0 +1,47 @@
+apiVersion: skaffold/v2beta26
+kind: Config
+metadata:
+  name: faceit-technical-test
+build:
+  artifacts:
+  - image: build-auth
+    context: build/auth
+    docker:
+      dockerfile: Dockerfile
+  - image: build-auth_grpc
+    context: build/auth_grpc
+    docker:
+      dockerfile: Dockerfile
+  - image: build-grpc_event_server
+    context: build/grpc_event_server
+    docker:
+      dockerfile: Dockerfile
+  - image: build-user
+    context: build/user
+    docker:
+      dockerfile: Dockerfile
+  - image: build-user_grpc
+    context: build/user_grpc
+    docker:
+      dockerfile: Dockerfile
+deploy:
+  kubectl:
+    manifests:
+    - build/user_grpc/deployment.yaml
+    - build/auth/deployment.yaml
+    - build/auth_grpc/deployment.yaml
+    - build/grpc_event_server/deployment.yaml
+    - build/user/deployment.yaml
+portForward:
+- resourceType: service
+  resourceName: build-auth
+  port: 8109
+- resourceType: service
+  resourceName: build-auth_grpc
+  port: 8110
+- resourceType: service
+  resourceName: build-user
+  port: 8089
+- resourceType: service
+  resourceName: build-user_grpc
+  port: 8092

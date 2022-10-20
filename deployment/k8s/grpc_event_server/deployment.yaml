@@ -1,0 +1,30 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: build-grpc_event_server
+  labels:
+    app: build-grpc_event_server
+spec:
+  clusterIP: None
+  selector:
+    app: build-grpc_event_server
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: build-grpc_event_server
+  labels:
+    app: build-grpc_event_server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: build-grpc_event_server
+  template:
+    metadata:
+      labels:
+        app: build-grpc_event_server
+    spec:
+      containers:
+      - name: build-grpc_event_server
+        image: build-grpc_event_server
