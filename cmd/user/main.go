@@ -47,7 +47,7 @@ func init() {
 // @description  This is a swagger for Faceit
 // @license.name Apache 2.0
 // @license.url  http://www.apache.org/licenses/LICENSE-2.0.html
-// @host         localhost:8109
+// @host         localhost:8089
 // @BasePath     /api/v1/user
 // @securityDefinitions.apikey Bearer
 // @in                         header

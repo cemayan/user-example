@@ -55,7 +55,7 @@ definitions:
       updatedAt:
         type: string
     type: object
-host: localhost:8109
+host: localhost:8089
 info:
   contact: {}
   description: This is a swagger for Faceit
@@ -68,107 +68,107 @@ paths:
   /:
     get:
       parameters:
-      - description: limit
-        in: path
-        name: limit
-        type: number
-      - description: page
-        in: path
-        name: page
-        type: number
-      - description: sColumn
-        in: path
-        name: sColumn
-        type: number
-      - description: sType
-        in: path
-        name: sType
-        type: number
-      - description: cQuery
-        in: path
-        name: cQuery
-        type: string
-      - description: cVal
-        in: path
-        name: cVal
-        type: string
+        - description: limit
+          in: path
+          name: limit
+          type: number
+        - description: page
+          in: path
+          name: page
+          type: number
+        - description: sColumn
+          in: path
+          name: sColumn
+          type: number
+        - description: sType
+          in: path
+          name: sType
+          type: number
+        - description: cQuery
+          in: path
+          name: cQuery
+          type: string
+        - description: cVal
+          in: path
+          name: cVal
+          type: string
       responses: {}
       security:
-      - Bearer: []
+        - Bearer: []
       summary: GetAllUser
       tags:
-      - User
+        - User
     post:
       parameters:
-      - description: query params
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.User'
+        - description: query params
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/model.User'
       responses: {}
       summary: CreateUser
       tags:
-      - User
+        - User
   /{id}:
     delete:
       parameters:
-      - description: id
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: id
+          in: path
+          name: id
+          required: true
+          type: string
       responses: {}
       security:
-      - Bearer: []
+        - Bearer: []
       summary: DeleteUser
       tags:
-      - User
+        - User
     get:
       parameters:
-      - description: id
-        in: path
-        name: id
-        required: true
-        type: string
+        - description: id
+          in: path
+          name: id
+          required: true
+          type: string
       responses: {}
       security:
-      - Bearer: []
+        - Bearer: []
       summary: GetUser
       tags:
-      - User
+        - User
     put:
       parameters:
-      - description: id
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: query params
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/dto.UpdateUser'
+        - description: id
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: query params
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/dto.UpdateUser'
       responses: {}
       security:
-      - Bearer: []
+        - Bearer: []
       summary: UpdateUser
       tags:
-      - User
+        - User
   /getToken:
     post:
       parameters:
-      - description: query params
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/model.LoginInput'
+        - description: query params
+          in: body
+          name: request
+          required: true
+          schema:
+            $ref: '#/definitions/model.LoginInput'
       responses: {}
       summary: Login
       tags:
-      - Auth
+        - Auth
 securityDefinitions:
   Bearer:
     in: header

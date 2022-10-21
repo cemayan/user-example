@@ -1,11 +1,9 @@
 # faceit-technical-test
 
-[![Faceit](https://github.com/cemayan/faceit-technical-test/actions/workflows/push.yml/badge.svg?branch=main)](https://github.com/cemayan/faceit-technical-test/actions/workflows/push.yml)
-
 ### Introduction
 
 The project consists of five microservices
-- Auth 
+- Auth
 - Auth(gRPC)
 - User
 - User(gRPC)
@@ -35,11 +33,6 @@ You can start it in docker environment
 
 ```shell
  docker-compose -f deployment/docker-compose.yml  up
-```
-
-You can deploy to k8s
-```shell
-skaffold deploy
 ```
 ---
 
@@ -103,4 +96,8 @@ go tool cover -html=coverage.out
 
 ### Example Requests
 
+You can get user which is  filtered, sorted and paginated list.
+
 http://localhost:8089/api/v1/user/?limit=10&page=1&cQuery=country%20%3D%20%3F&cValue=UK
+
+http://localhost:8089/api/v1/user/?limit=10&page=1&sColumn=0&sType=0

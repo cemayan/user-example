@@ -26,6 +26,7 @@ type Userrepo struct {
 	log *log.Logger
 }
 
+// paginate returns gorm DB struct which is calculated result
 func (r Userrepo) paginate(value interface{}, pagination *common.Pagination, db *gorm.DB) func(db *gorm.DB) *gorm.DB {
 	var totalRows int64
 	db.Model(value).Count(&totalRows)
@@ -39,6 +40,10 @@ func (r Userrepo) paginate(value interface{}, pagination *common.Pagination, db 
 	}
 }
 
+// GetAllUser returns common.Pagination struct which is sorted, paginated and filtered
+// You can get user which is  filtered, sorted and paginated list.
+// http://localhost:8089/api/v1/user/?limit=10&page=1&cQuery=country%20%3D%20%3F&cValue=UK
+// http://localhost:8089/api/v1/user/?limit=10&page=1&sColumn=0&sType=0
 func (r Userrepo) GetAllUser(pagination common.Pagination) (*common.Pagination, error) {
 	var users []model.User
 
@@ -58,11 +63,13 @@ func (r Userrepo) GetAllUser(pagination common.Pagination) (*common.Pagination, 
 
 }
 
+// UpdateUser returns error if updating  process get an error
 func (r Userrepo) UpdateUser(user *model.User) error {
 	tx := r.db.Save(user)
 	return tx.Error
 }
 
+// DeleteUser returns error if deleting process get an error
 func (r Userrepo) DeleteUser(id string) error {
 	user, err := r.GetUserById(id)
 
@@ -74,6 +81,7 @@ func (r Userrepo) DeleteUser(id string) error {
 	return tx.Error
 }
 
+// CreateUser returns user based on given payload
 func (r Userrepo) CreateUser(user *model.User) (*model.User, error) {
 	if err := r.db.Create(user).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
