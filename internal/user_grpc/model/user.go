@@ -17,9 +17,9 @@ type Base struct {
 // User struct
 type User struct {
 	*Base
-	NickName  string `gorm:"uniqueIndex" json:"nickname"`
-	Email     string `gorm:"uniqueIndex" json:"email"`
-	Password  string `gorm:"not null" json:"password"`
+	NickName  string `gorm:"uniqueIndex" json:"nickname" validate:"required"   `
+	Email     string `gorm:"uniqueIndex" json:"email"  validate:"required,email" `
+	Password  string `gorm:"not null" json:"password"  validate:"required" `
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Country   string `json:"country"`

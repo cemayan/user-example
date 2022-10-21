@@ -16,14 +16,12 @@ type UserRepository interface {
 	UpdateUser(user *model.User) error
 	DeleteUser(id string) error
 	GetUserById(id string) (*model.User, error)
-	GetUserByEmail(email string) (*model.User, error)
-	GetUserByNickname(nickName string) (*model.User, error)
 	paginate(value interface{}, pagination *common.Pagination, db *gorm.DB) func(db *gorm.DB) *gorm.DB
 }
 
 type Userrepo struct {
 	db  *gorm.DB
-	log *log.Logger
+	log *log.Entry
 }
 
 // paginate returns gorm DB struct which is calculated result
@@ -110,31 +108,7 @@ func (r Userrepo) GetUserById(id string) (*model.User, error) {
 	return &user, nil
 }
 
-// GetUserByNickname returns user based on given username
-func (r Userrepo) GetUserByNickname(nickName string) (*model.User, error) {
-	var user model.User
-	if err := r.db.Where("nick_name = ?", nickName).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &user, nil
-}
-
-// GetUserByEmail returns user based on given id
-func (r Userrepo) GetUserByEmail(email string) (*model.User, error) {
-	var user model.User
-	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &user, nil
-}
-
-func NewUserRepo(db *gorm.DB, log *log.Logger) UserRepository {
+func NewUserRepo(db *gorm.DB, log *log.Entry) UserRepository {
 	return &Userrepo{
 		db:  db,
 		log: log,

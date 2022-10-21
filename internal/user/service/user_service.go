@@ -7,6 +7,7 @@ import (
 	"github.com/cemayan/faceit-technical-test/internal/user/model"
 	"github.com/cemayan/faceit-technical-test/internal/user/repo"
 	"github.com/cemayan/faceit-technical-test/pkg/common"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/bcrypt"
@@ -25,7 +26,8 @@ type UserService interface {
 // A UserSvc  contains the required dependencies for this service
 type UserSvc struct {
 	repository repo.UserRepository
-	log        *log.Logger
+	validate   *validator.Validate
+	log        *log.Entry
 	configs    *user.AppConfig
 }
 
@@ -44,6 +46,7 @@ func (s UserSvc) GetAllUser(c *fiber.Ctx) error {
 	var pagination common.Pagination
 	err := c.QueryParser(&pagination)
 	if err != nil {
+		s.log.WithFields(log.Fields{"method": "GetAllUser"}).Errorf(fmt.Sprintf("An error occured %s \n", err))
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("An error occured %s", err),
 			StatusCode: 400,
@@ -53,6 +56,7 @@ func (s UserSvc) GetAllUser(c *fiber.Ctx) error {
 	result, err := s.repository.GetAllUser(pagination)
 
 	if err != nil {
+		s.log.WithFields(log.Fields{"method": "GetAllUser"}).Errorf(fmt.Sprintf("An error occured %s \n", err))
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("An error occured %s", err),
 			StatusCode: 400,
@@ -67,7 +71,7 @@ func (s UserSvc) GetAllUser(c *fiber.Ctx) error {
 
 // HealthCheck returns 200 with body
 func (s UserSvc) HealthCheck(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON("healty!")
+	return c.Status(fiber.StatusOK).JSON("UP!")
 }
 
 // HashPassword returns encrypted password based on given password
@@ -88,6 +92,7 @@ func (s UserSvc) GetUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 	user, err := s.repository.GetUserById(id)
 	if user == nil || err != nil {
+		s.log.WithFields(log.Fields{"method": "GetUser"}).Errorf("No user found with %s \n", id)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("No user found with %v", id),
 			StatusCode: 400,
@@ -118,14 +123,26 @@ func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 
 	user := new(model.User)
 	if err := c.BodyParser(user); err != nil {
-		return c.Status(fiber.StatusInternalServerError).JSON(model.Response{
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Review your input %s", err)
+		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("Review your input %s", err),
-			StatusCode: 500,
+			StatusCode: 400,
+		})
+	}
+
+	err := s.validate.Struct(user)
+
+	if err != nil {
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Review your payload %s", err)
+		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
+			Message:    fmt.Sprintf("Review your input %s", err),
+			StatusCode: 400,
 		})
 	}
 
 	hash, err := s.HashPassword(user.Password)
 	if err != nil {
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Couldn't hash password %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("Couldn't hash password %s", err),
 			StatusCode: 400,
@@ -136,6 +153,7 @@ func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 
 	user, err = s.repository.CreateUser(user)
 	if user == nil || err != nil {
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Couldn't create use %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("Couldn't create use %s", err),
 			StatusCode: 400,
@@ -147,6 +165,7 @@ func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 		Nickname: user.NickName,
 	}
 
+	s.log.Infof("User created %s \n", newUser)
 	return c.Status(fiber.StatusCreated).JSON(model.Response{
 		StatusCode: 201,
 		Data: model.UserData{
@@ -173,6 +192,7 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 
 	var userDTO dto.UpdateUser
 	if err := c.BodyParser(&userDTO); err != nil {
+		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("Review your input %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			StatusCode: 400,
 			Message:    fmt.Sprintf("Review your input %s", err),
@@ -181,6 +201,7 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 
 	id := c.Params("id")
 	if id == "" {
+		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("Review your id %v \n", id)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			StatusCode: 400,
 			Message:    fmt.Sprintf("Review your id %v", id),
@@ -189,6 +210,7 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 
 	user, err := s.repository.GetUserById(id)
 	if user == nil || err != nil {
+		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("No user found with %s", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			StatusCode: 400,
 			Message:    fmt.Sprintf("No user found with %s", err),
@@ -200,26 +222,9 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 		user.Password = hash
 	}
 	if userDTO.NickName != "" {
-
-		_, err := s.repository.GetUserByNickname(userDTO.NickName)
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(model.Response{
-				StatusCode: 400,
-				Message:    fmt.Sprintf("Same record found with same nickname in db(%s)", userDTO.NickName),
-			})
-		}
-
 		user.NickName = userDTO.NickName
 	}
 	if userDTO.Email != "" {
-		_, err := s.repository.GetUserByEmail(userDTO.Email)
-
-		if err != nil {
-			return c.Status(fiber.StatusBadRequest).JSON(model.Response{
-				StatusCode: 400,
-				Message:    fmt.Sprintf("Same record found with  same email in db(%s)", userDTO.Email),
-			})
-		}
 		user.Email = userDTO.Email
 	}
 	if userDTO.FirstName != "" {
@@ -234,11 +239,13 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 
 	err = s.repository.UpdateUser(user)
 	if err != nil {
+		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("While user is updating an error occured: %s", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			StatusCode: 400,
 			Message:    fmt.Sprintf("While user is updating an error occured: %s", err),
 		})
 	} else {
+		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Infof("User successfully updated \n")
 		return c.Status(fiber.StatusOK).JSON(model.Response{
 			StatusCode: 200,
 			Data: model.UserData{
@@ -265,11 +272,14 @@ func (s UserSvc) DeleteUser(c *fiber.Ctx) error {
 
 	err := s.repository.DeleteUser(id)
 	if err != nil {
+
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("While user is deleting an error occured: %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			StatusCode: 400,
 			Message:    fmt.Sprintf("While user is deleting an error occured: %s", err),
 		})
 	} else {
+		s.log.WithFields(log.Fields{"method": "DeleteUser"}).Errorf("User successfully deleted %v \n", id)
 		return c.Status(fiber.StatusOK).JSON(model.Response{
 			StatusCode: 200,
 			Message:    fmt.Sprintf("User successfully deleted %v", id),
@@ -277,9 +287,10 @@ func (s UserSvc) DeleteUser(c *fiber.Ctx) error {
 	}
 }
 
-func NewUserService(rep repo.UserRepository, log *log.Logger, configs *user.AppConfig) UserService {
+func NewUserService(rep repo.UserRepository, validate *validator.Validate, log *log.Entry, configs *user.AppConfig) UserService {
 	return &UserSvc{
 		repository: rep,
+		validate:   validate,
 		log:        log,
 		configs:    configs,
 	}

@@ -42,26 +42,28 @@ func init() {
 	appConfig, err := _configs.GetConfig(env)
 	configs = appConfig
 	if err != nil {
+		_log.WithFields(logrus.Fields{"service": "grpc_event_server"}).Errorf("An error occured when getting config. %v", err)
+
 		return
 	}
 
 	//Postresql connection
-	dbHandler = postgres.NewDbHandler(&configs.Postgresql)
+	dbHandler = postgres.NewDbHandler(&configs.Postgresql, _log.WithFields(logrus.Fields{"service": "grpc_event_server"}))
 	_db := dbHandler.New()
 	database.DB = _db
-	util.MigrateDB(_db)
-	userRepo = repo.NewGrpcUserRepo(database.DB, _log)
+	util.MigrateDB(_db, _log.WithFields(logrus.Fields{"service": "grpc_event_server"}))
+	userRepo = repo.NewGrpcUserRepo(database.DB, _log.WithFields(logrus.Fields{"service": "grpc_event_server"}))
 }
 
 func (s server) HandleEvent(eventServer pb.EventGrpcService_HandleEventServer) error {
-	_log.Infoln("Event consuming operation is starting ...")
+	_log.WithFields(logrus.Fields{"service": "grpc_event_server"}).Infoln("Event consuming operation is starting ...")
 	for {
 		event, err := eventServer.Recv()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			_log.Fatalf("An error occured %s", err.Error())
+			_log.WithFields(logrus.Fields{"service": "grpc_event_server"}).Errorf("An error occured %s", err.Error())
 		}
 
 		switch event.AggregateType {
@@ -69,7 +71,7 @@ func (s server) HandleEvent(eventServer pb.EventGrpcService_HandleEventServer) e
 			userEventHandler = handler.NewUserEventHandler(userRepo, event, eventServer, _log)
 			err = userEventHandler.Handle()
 			if err != nil {
-				_log.Fatalf("An error occured %s", err.Error())
+				_log.WithFields(logrus.Fields{"service": "grpc_event_server"}).Errorf("An error occured %s", err.Error())
 			}
 		}
 	}
@@ -78,6 +80,19 @@ func (s server) HandleEvent(eventServer pb.EventGrpcService_HandleEventServer) e
 }
 
 func main() {
+
+	if os.Getenv("ENV") == "dev" {
+
+		_log.SetFormatter(&logrus.TextFormatter{
+			DisableColors: false,
+			FullTimestamp: true,
+		})
+	} else {
+		_log.SetFormatter(&logrus.JSONFormatter{})
+		_log.SetOutput(os.Stdout)
+		_log.WithFields(logrus.Fields{"service": "grpc_event_server"})
+	}
+
 	_log.Infoln("gRPC server is starting...")
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", configs.Grpc.PORT))
 	util.FailOnError(err, "tcp listen failed.")
@@ -85,9 +100,9 @@ func main() {
 	// gRPC implementation
 	s := grpc.NewServer()
 	pb.RegisterEventGrpcServiceServer(s, &server{})
-	_log.Printf("server listening at %v", lis.Addr())
+	_log.WithFields(logrus.Fields{"service": "grpc_event_server"}).Printf("server listening at %v", lis.Addr())
 	if err := s.Serve(lis); err != nil {
-		_log.Errorf("failed to serve: %v", err)
+		_log.WithFields(logrus.Fields{"service": "grpc_event_server"}).Errorf("failed to serve: %v", err)
 	}
 
 }

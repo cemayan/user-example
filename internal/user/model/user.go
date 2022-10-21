@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/google/uuid"
+	_ "gopkg.in/validator.v2"
 	"gorm.io/gorm"
 	"time"
 )
@@ -17,9 +18,9 @@ type Base struct {
 // User struct
 type User struct {
 	*Base
-	NickName  string `gorm:"uniqueIndex" json:"nickname"`
-	Email     string `gorm:"uniqueIndex" json:"email"`
-	Password  string `gorm:"not null" json:"password"`
+	NickName  string `gorm:"uniqueIndex" json:"nickname" validate:"required"   `
+	Email     string `gorm:"uniqueIndex" json:"email"  validate:"required,email" `
+	Password  string `gorm:"not null" json:"password"  validate:"required" `
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`
 	Country   string `json:"country"`

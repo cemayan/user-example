@@ -2,7 +2,6 @@ package repo
 
 import (
 	"errors"
-	"fmt"
 	"github.com/cemayan/faceit-technical-test/internal/user_grpc/dto"
 	"github.com/cemayan/faceit-technical-test/internal/user_grpc/model"
 	"github.com/cemayan/faceit-technical-test/pkg/common"
@@ -19,15 +18,13 @@ type GrpcUserRepository interface {
 	UpdateUser(id string, user *dto.UpdateUser) error
 	DeleteUser(id string) error
 	GetUserById(id string) (*model.User, error)
-	GetUserByEmail(email string) (*model.User, error)
-	GetUserByNickname(nickName string) (*model.User, error)
 	hashPassword(password string) (string, error)
 	paginate(value interface{}, pagination *common.Pagination, db *gorm.DB) func(db *gorm.DB) *gorm.DB
 }
 
 type GrpcUserrepo struct {
 	db  *gorm.DB
-	log *log.Logger
+	log *log.Entry
 }
 
 func (r GrpcUserrepo) paginate(value interface{}, pagination *common.Pagination, db *gorm.DB) func(db *gorm.DB) *gorm.DB {
@@ -81,18 +78,10 @@ func (r GrpcUserrepo) UpdateUser(id string, userDTO *dto.UpdateUser) error {
 	}
 
 	if userDTO.NickName != "" {
-		_, err := r.GetUserByNickname(userDTO.NickName)
-		if err != nil {
-			return errors.New(fmt.Sprintf("Same record found with same nickname in db(%s)", userDTO.NickName))
-		}
 		user.NickName = userDTO.NickName
 	}
 
 	if userDTO.Email != "" {
-		_, err := r.GetUserByEmail(userDTO.Email)
-		if err != nil {
-			return errors.New(fmt.Sprintf("Same record found with same email in db(%s)", userDTO.Email))
-		}
 		user.Email = userDTO.Email
 	}
 	if userDTO.FirstName != "" {
@@ -157,31 +146,7 @@ func (r GrpcUserrepo) GetUserById(id string) (*model.User, error) {
 	return &user, nil
 }
 
-// GetUserByNickname returns user based on given username
-func (r GrpcUserrepo) GetUserByNickname(nickName string) (*model.User, error) {
-	var user model.User
-	if err := r.db.Where("nick_name = ?", nickName).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &user, nil
-}
-
-// GetUserByEmail returns user based on given id
-func (r GrpcUserrepo) GetUserByEmail(email string) (*model.User, error) {
-	var user model.User
-	if err := r.db.Where("email = ?", email).First(&user).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, nil
-		}
-		return nil, err
-	}
-	return &user, nil
-}
-
-func NewGrpcUserRepo(db *gorm.DB, log *log.Logger) GrpcUserRepository {
+func NewGrpcUserRepo(db *gorm.DB, log *log.Entry) GrpcUserRepository {
 	return &GrpcUserrepo{
 		db:  db,
 		log: log,

@@ -10,6 +10,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/writer"
 	"github.com/spf13/viper"
 	"os"
 )
@@ -32,14 +33,16 @@ func init() {
 	appConfig, err := _configs.GetConfig(env)
 	configs = appConfig
 	if err != nil {
+		_log.WithFields(logrus.Fields{"service": "user"}).Errorf("An error occured when getting config. %v", err)
+
 		return
 	}
 
 	//Postresql connection
-	dbHandler = postgres.NewDbHandler(&configs.Postgresql)
+	dbHandler = postgres.NewDbHandler(&configs.Postgresql, _log.WithFields(logrus.Fields{"service": "user"}))
 	_db := dbHandler.New()
 	database.DB = _db
-	util.MigrateDB(_db)
+	util.MigrateDB(_db, _log.WithFields(logrus.Fields{"service": "user"}))
 }
 
 // @title        Faceit
@@ -60,12 +63,27 @@ func main() {
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}))
 
-	_log.SetFormatter(&logrus.TextFormatter{
-		DisableColors: false,
-		FullTimestamp: true,
-	})
+	if os.Getenv("ENV") == "dev" {
 
-	router.SetupRoutes(app, _log, configs)
+		//_log.SetFormatter(&logrus.TextFormatter{
+		//	DisableColors: false,
+		//	FullTimestamp: true,
+		//})
+		_log.SetFormatter(&logrus.JSONFormatter{})
+		_log.SetOutput(os.Stdout)
+	} else {
+		_log.SetFormatter(&logrus.JSONFormatter{})
+		_log.SetOutput(os.Stdout)
+	}
+
+	_log.AddHook(&writer.Hook{ // Send info and debug logs to stdout
+		Writer: os.Stdout,
+		LogLevels: []logrus.Level{
+			logrus.InfoLevel,
+			logrus.DebugLevel,
+		},
+	})
+	router.SetupRoutes(app, _log.WithFields(logrus.Fields{"service": "user"}), configs)
 
 	err := app.Listen(":8089")
 	if err != nil {

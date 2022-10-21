@@ -12,6 +12,7 @@ import (
 	"github.com/cemayan/faceit-technical-test/pkg/common"
 	"github.com/cemayan/faceit-technical-test/protos/event"
 	pb "github.com/cemayan/faceit-technical-test/protos/event"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -28,7 +29,8 @@ type GrpcUserService interface {
 // A UserSvc  contains the required dependencies for this service
 type GrpcUserSvc struct {
 	repository repo.GrpcUserRepository
-	log        *log.Logger
+	validate   *validator.Validate
+	log        *log.Entry
 	grpcClient pb.EventGrpcServiceClient
 	configs    *user.AppConfig
 }
@@ -48,6 +50,7 @@ func (s GrpcUserSvc) GetAllUser(c *fiber.Ctx) error {
 	var pagination common.Pagination
 	err := c.QueryParser(&pagination)
 	if err != nil {
+		s.log.WithFields(log.Fields{"method": "GetAllUser"}).Errorf(fmt.Sprintf("An error occured %s \n", err))
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("An error occured %s", err),
 			StatusCode: 400,
@@ -57,6 +60,7 @@ func (s GrpcUserSvc) GetAllUser(c *fiber.Ctx) error {
 	result, err := s.repository.GetAllUser(pagination)
 
 	if err != nil {
+		s.log.WithFields(log.Fields{"method": "GetAllUser"}).Errorf(fmt.Sprintf("An error occured %s \n", err))
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("An error occured %s", err),
 			StatusCode: 400,
@@ -71,7 +75,7 @@ func (s GrpcUserSvc) GetAllUser(c *fiber.Ctx) error {
 
 // HealthCheck returns 200 with body
 func (s GrpcUserSvc) HealthCheck(c *fiber.Ctx) error {
-	return c.Status(fiber.StatusOK).JSON("healty!")
+	return c.Status(fiber.StatusOK).JSON("UP!")
 }
 
 // GetUser returns user based on given id.
@@ -85,6 +89,7 @@ func (s GrpcUserSvc) GetUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 	user, err := s.repository.GetUserById(id)
 	if user == nil || err != nil {
+		s.log.WithFields(log.Fields{"method": "GetUser"}).Errorf("No user found with %s \n", id)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("No user found with %v", id),
 			StatusCode: 400,
@@ -112,6 +117,25 @@ func (s GrpcUserSvc) GetUser(c *fiber.Ctx) error {
 // @Router   / [post]
 func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 
+	user := new(model.User)
+	if err := c.BodyParser(user); err != nil {
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Review your input %s", err)
+		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
+			Message:    fmt.Sprintf("Review your input %s", err),
+			StatusCode: 400,
+		})
+	}
+
+	err := s.validate.Struct(user)
+
+	if err != nil {
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Review your payload %s", err)
+		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
+			Message:    fmt.Sprintf("Review your input %s", err),
+			StatusCode: 400,
+		})
+	}
+
 	handleEvent, err := s.grpcClient.HandleEvent(context.Background())
 	if err != nil {
 		return err
@@ -124,17 +148,33 @@ func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 		EventDate:     util.GetTime(),
 		EventName:     pb.EventName_USER_CREATED,
 	}
-	handleEvent.Send(event)
+	err = handleEvent.Send(event)
+	if err != nil {
+		if err != nil {
+			s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("An error occured  %s \n", err)
+			return c.Status(fiber.StatusBadRequest).JSON(&model.Response{
+				Message:    err.Error(),
+				StatusCode: 400,
+			})
+		}
+	}
 
 	recv, err := handleEvent.Recv()
 	if err != nil {
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("An error occured  %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(&model.Response{
 			Message:    err.Error(),
 			StatusCode: 400,
 		})
 	} else {
 		var user model.User
-		json.Unmarshal(recv.Data, &user)
+		err := json.Unmarshal(recv.Data, &user)
+		if err != nil {
+			s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Couldn't unmarshall to recv.Data %s \n", err)
+			return err
+		}
+
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Infof("User created %v \n", user)
 		return c.Status(fiber.StatusCreated).JSON(&model.Response{
 			Message: "User created!",
 			Data: model.UserData{
@@ -159,8 +199,18 @@ func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 // @Security Bearer
 func (s GrpcUserSvc) UpdateUser(c *fiber.Ctx) error {
 
+	user := new(model.User)
+	if err := c.BodyParser(user); err != nil {
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Review your input %s", err)
+		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
+			Message:    fmt.Sprintf("Review your input %s", err),
+			StatusCode: 400,
+		})
+	}
+
 	id := c.Params("id")
 	if id == "" {
+		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("Review your query param %s \n", id)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			StatusCode: 400,
 			Message:    fmt.Sprintf("Review your id %v", id),
@@ -180,16 +230,26 @@ func (s GrpcUserSvc) UpdateUser(c *fiber.Ctx) error {
 		EventName:     pb.EventName_USER_UPDATED,
 		InternalId:    id,
 	}
-	handleEvent.Send(event)
+	err = handleEvent.Send(event)
+	if err != nil {
+		if err != nil {
+			s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("An error occured  %s \n", err)
+			return c.Status(fiber.StatusBadRequest).JSON(&model.Response{
+				Message:    err.Error(),
+				StatusCode: 400,
+			})
+		}
+	}
 
 	_, err = handleEvent.Recv()
 	if err != nil {
+		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("An error occured  %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(&model.Response{
 			Message:    err.Error(),
 			StatusCode: 400,
 		})
 	} else {
-
+		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Infof("User successfully updated \n")
 		return c.Status(fiber.StatusOK).JSON(&model.Response{
 			Message:    "User updated!",
 			StatusCode: 200,
@@ -210,6 +270,7 @@ func (s GrpcUserSvc) DeleteUser(c *fiber.Ctx) error {
 
 	handleEvent, err := s.grpcClient.HandleEvent(context.Background())
 	if err != nil {
+		s.log.WithFields(log.Fields{"method": "DeleteUser"}).Errorf("An error occured \n")
 		return err
 	}
 
@@ -221,16 +282,24 @@ func (s GrpcUserSvc) DeleteUser(c *fiber.Ctx) error {
 		EventName:     pb.EventName_USER_DELETED,
 		InternalId:    id,
 	}
-	handleEvent.Send(event)
+	err = handleEvent.Send(event)
+	if err != nil {
+		s.log.WithFields(log.Fields{"method": "DeleteUser"}).Errorf("An error occured  %s \n", err)
+		return c.Status(fiber.StatusBadRequest).JSON(&model.Response{
+			Message:    err.Error(),
+			StatusCode: 400,
+		})
+	}
 
 	_, err = handleEvent.Recv()
 	if err != nil {
+		s.log.WithFields(log.Fields{"method": "DeleteUser"}).Errorf("An error occured  %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(&model.Response{
 			Message:    err.Error(),
 			StatusCode: 400,
 		})
 	} else {
-
+		s.log.WithFields(log.Fields{"method": "DeleteUser"}).Errorf("User successfully deleted %v \n", id)
 		return c.Status(fiber.StatusOK).JSON(&model.Response{
 			Message:    "User successfully deleted!",
 			StatusCode: 200,
@@ -239,9 +308,10 @@ func (s GrpcUserSvc) DeleteUser(c *fiber.Ctx) error {
 
 }
 
-func NewGrpcUserService(rep repo.GrpcUserRepository, grpcClient event.EventGrpcServiceClient, log *log.Logger, configs *user.AppConfig) GrpcUserService {
+func NewGrpcUserService(rep repo.GrpcUserRepository, validate *validator.Validate, grpcClient event.EventGrpcServiceClient, log *log.Entry, configs *user.AppConfig) GrpcUserService {
 	return &GrpcUserSvc{
 		repository: rep,
+		validate:   validate,
 		grpcClient: grpcClient,
 		log:        log,
 		configs:    configs,

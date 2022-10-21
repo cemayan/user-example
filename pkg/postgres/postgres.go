@@ -3,11 +3,11 @@ package postgres
 import (
 	"fmt"
 	"github.com/cemayan/faceit-technical-test/pkg/common"
+	log "github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"log"
-	"os"
+
 	"time"
 )
 
@@ -17,6 +17,7 @@ type DBHandler interface {
 
 type DBService struct {
 	configs *common.Postgresql
+	_log    *log.Entry
 }
 
 // New  serves to connect to db
@@ -24,7 +25,7 @@ type DBService struct {
 func (d DBService) New() *gorm.DB {
 
 	newLogger := logger.New(
-		log.New(os.Stdout, "\r\n", log.LstdFlags), // io writer
+		d._log.Logger, // io writer
 		logger.Config{
 			SlowThreshold:             time.Second,   // Slow SQL threshold
 			LogLevel:                  logger.Silent, // Log level
@@ -46,11 +47,11 @@ func (d DBService) New() *gorm.DB {
 		panic("failed to connect database")
 	}
 
-	fmt.Println("Connection Opened to Database")
+	d._log.WithFields(log.Fields{"service": "database"}).Println("Connection Opened to Database")
 
 	return db
 }
 
-func NewDbHandler(configs *common.Postgresql) DBHandler {
-	return &DBService{configs: configs}
+func NewDbHandler(configs *common.Postgresql, _log *log.Entry) DBHandler {
+	return &DBService{configs: configs, _log: _log}
 }

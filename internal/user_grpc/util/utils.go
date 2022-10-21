@@ -1,7 +1,6 @@
 package util
 
 import (
-	"fmt"
 	"github.com/cemayan/faceit-technical-test/internal/user/model"
 	log "github.com/sirupsen/logrus"
 	"gorm.io/gorm"
@@ -21,15 +20,18 @@ func GetTime() int64 {
 	return now.Unix()
 }
 
-func MigrateDB(db *gorm.DB) {
+func MigrateDB(db *gorm.DB, log *log.Entry) {
 	if os.Getenv("ENV") == "test" {
 		// ConnectDBForTesting  serves to connect to db for Testing
 		// When DB connection is successful then model migration is started
-		db.Migrator().DropTable(&model.User{})
+		isExist := db.Migrator().HasTable(&model.User{})
+		if isExist {
+			db.Migrator().DropTable(&model.User{})
+		}
 		db.AutoMigrate(&model.User{})
-		fmt.Println("Database Migrated")
+		log.Infoln("Database Migrated")
 	} else {
 		db.AutoMigrate(&model.User{})
-		fmt.Println("Database Migrated")
+		log.Infoln("Database Migrated")
 	}
 }

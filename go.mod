@@ -3,11 +3,10 @@ module github.com/cemayan/faceit-technical-test
 go 1.19
 
 require (
+	github.com/go-playground/validator/v10 v10.11.1
 	github.com/gofiber/adaptor/v2 v2.1.28
 	github.com/gofiber/fiber/v2 v2.38.1
-	github.com/gofiber/jwt/v2 v2.2.7
 	github.com/gofiber/swagger v0.1.4
-	github.com/golang-jwt/jwt/v4 v4.4.2
 	github.com/google/uuid v1.1.2
 	github.com/prometheus/client_golang v1.13.0
 	github.com/sirupsen/logrus v1.9.0
@@ -18,6 +17,7 @@ require (
 	golang.org/x/crypto v0.0.0-20221005025214-4161e89ecf1b
 	google.golang.org/grpc v1.50.0
 	google.golang.org/protobuf v1.28.1
+	gopkg.in/validator.v2 v2.0.1
 	gorm.io/driver/postgres v1.4.4
 	gorm.io/gorm v1.24.0
 )
@@ -35,6 +35,8 @@ require (
 	github.com/go-openapi/jsonreference v0.19.6 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-openapi/swag v0.19.15 // indirect
+	github.com/go-playground/locales v0.14.0 // indirect
+	github.com/go-playground/universal-translator v0.18.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
@@ -50,6 +52,7 @@ require (
 	github.com/jinzhu/now v1.1.4 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.15.7 // indirect
+	github.com/leodido/go-urn v1.2.1 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mailru/easyjson v0.7.6 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.1 // indirect

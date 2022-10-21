@@ -37,6 +37,7 @@ func init() {
 	appConfig, err := _configs.GetConfig(env)
 	configs = appConfig
 	if err != nil {
+		_log.WithFields(logrus.Fields{"service": "user_grpc"}).Errorf("An error occured when getting config. %v", err)
 		return
 	}
 
@@ -49,10 +50,10 @@ func init() {
 	_log.Infoln("gRPC connection is starting...")
 
 	//Postresql connection
-	dbHandler = postgres.NewDbHandler(&configs.Postgresql)
+	dbHandler = postgres.NewDbHandler(&configs.Postgresql, _log.WithFields(logrus.Fields{"service": "user_grpc"}))
 	_db := dbHandler.New()
 	database.DB = _db
-	util.MigrateDB(_db)
+	util.MigrateDB(_db, _log.WithFields(logrus.Fields{"service": "user_grpc"}))
 }
 
 // @title        Faceit
@@ -75,12 +76,18 @@ func main() {
 		AllowHeaders: "Origin, Content-Type, Accept, Authorization",
 	}))
 
-	_log.SetFormatter(&logrus.TextFormatter{
-		DisableColors: false,
-		FullTimestamp: true,
-	})
+	if os.Getenv("ENV") == "dev" {
 
-	router.SetupGrpcRoutes(app, _log, grpcClient, configs)
+		_log.SetFormatter(&logrus.TextFormatter{
+			DisableColors: false,
+			FullTimestamp: true,
+		})
+	} else {
+		_log.SetFormatter(&logrus.JSONFormatter{})
+		_log.SetOutput(os.Stdout)
+	}
+
+	router.SetupGrpcRoutes(app, _log.WithFields(logrus.Fields{"service": "user_grpc"}), grpcClient, configs)
 
 	err := app.Listen(":8092")
 	if err != nil {

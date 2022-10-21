@@ -11,6 +11,7 @@ import (
 	"github.com/cemayan/faceit-technical-test/internal/user/util"
 	"github.com/cemayan/faceit-technical-test/internal/user_grpc/dto"
 	"github.com/cemayan/faceit-technical-test/pkg/postgres"
+	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
 	log "github.com/sirupsen/logrus"
@@ -31,6 +32,7 @@ type e2eTestSuite struct {
 	configs   *user.AppConfig
 	v         *viper.Viper
 	dbHandler postgres.DBHandler
+	validate  *validator.Validate
 }
 
 func TestE2ETestSuite(t *testing.T) {
@@ -38,6 +40,7 @@ func TestE2ETestSuite(t *testing.T) {
 }
 
 func (ts *e2eTestSuite) SetupSuite() {
+
 	app := fiber.New()
 	app.Use(cors.New())
 
@@ -46,6 +49,8 @@ func (ts *e2eTestSuite) SetupSuite() {
 	ts.v = viper.New()
 	_configs := user.NewConfig(ts.v)
 
+	ts.validate = validator.New()
+
 	env := os.Getenv("ENV")
 	appConfig, err := _configs.GetConfig(env)
 	ts.configs = appConfig
@@ -53,18 +58,18 @@ func (ts *e2eTestSuite) SetupSuite() {
 		return
 	}
 
-	router.SetupRoutes(ts.app, log.New(), appConfig)
+	router.SetupRoutes(ts.app, log.New().WithFields(log.Fields{"service": "user"}), appConfig)
 
 	//Postresql connection
-	ts.dbHandler = postgres.NewDbHandler(&ts.configs.Postgresql)
+	ts.dbHandler = postgres.NewDbHandler(&ts.configs.Postgresql, log.New().WithFields(log.Fields{"service": "user"}))
 	db := ts.dbHandler.New()
 	ts.db = db
 
-	util.MigrateDB(ts.db)
+	util.MigrateDB(ts.db, log.New().WithFields(log.Fields{"service": "user"}))
 
-	userRepo := repo.NewUserRepo(ts.db, log.New())
+	userRepo := repo.NewUserRepo(ts.db, log.New().WithFields(log.Fields{"service": "user"}))
 
-	userSvc := service.NewUserService(userRepo, log.New(), ts.configs)
+	userSvc := service.NewUserService(userRepo, ts.validate, log.New().WithFields(log.Fields{"service": "user"}), ts.configs)
 	ts.usrSvc = userSvc
 
 }
@@ -88,9 +93,23 @@ func (ts *e2eTestSuite) getUserModel() model.User {
 	return user
 }
 
+func (ts *e2eTestSuite) getWrongUserModel() model.User {
+	var user model.User
+	user.Country = "UK"
+	return user
+}
+
 func (ts *e2eTestSuite) getUpdateUserModel() dto.UpdateUser {
 	var user dto.UpdateUser
 	user.NickName = "test4"
+	user.Email = "user@test.com"
+	return user
+}
+
+func (ts *e2eTestSuite) getUpdateUserRawPasswordModel() dto.UpdateUser {
+	var user dto.UpdateUser
+	user.NickName = "test4"
+	user.Password = "123131"
 	user.Email = "user@test.com"
 	return user
 }
@@ -109,6 +128,18 @@ func (ts *e2eTestSuite) saveUserModel() model.User {
 	user.Password = password
 	user.NickName = "test"
 	user.Email = "user@test.com"
+	user.Country = "UK"
+	ts.db.Create(&user)
+	return user
+}
+
+func (ts *e2eTestSuite) saveUserModel2() model.User {
+	var user model.User
+
+	password, _ := ts.usrSvc.HashPassword("123")
+	user.Password = password
+	user.NickName = "test2"
+	user.Email = "user2@test.com"
 	user.Country = "UK"
 	ts.db.Create(&user)
 	return user
@@ -142,6 +173,54 @@ func (ts *e2eTestSuite) TestUserService_Create() {
 		ts.Equal("user@test.com", users[0].Email)
 	}
 
+}
+
+func (ts *e2eTestSuite) TestUserService_CreateWrongPayload() {
+
+	ts.removeAllRecords()
+
+	ts.app.Post("/user", ts.usrSvc.CreateUser)
+
+	marshal, err := json.Marshal("test")
+	if err != nil {
+		return
+	}
+
+	requestBuffer := bytes.NewBuffer(marshal)
+
+	req := httptest.NewRequest("POST", "/user", requestBuffer)
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
+	}
+
+	ts.Equal(fiber.StatusBadRequest, resp.StatusCode)
+}
+
+func (ts *e2eTestSuite) TestUserService_CreateWrongPayload2() {
+
+	ts.removeAllRecords()
+
+	ts.app.Post("/user", ts.usrSvc.CreateUser)
+
+	marshal, err := json.Marshal(ts.getWrongUserModel())
+	if err != nil {
+		return
+	}
+
+	requestBuffer := bytes.NewBuffer(marshal)
+
+	req := httptest.NewRequest("POST", "/user", requestBuffer)
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
+	}
+
+	ts.Equal(fiber.StatusBadRequest, resp.StatusCode)
 }
 
 func (ts *e2eTestSuite) TestUserService_CheckStatusCodeWhenCreate() {
@@ -249,6 +328,80 @@ func (ts *e2eTestSuite) TestUserService_UpdateUser() {
 
 }
 
+func (ts *e2eTestSuite) TestUserService_UpdateWrongPayload() {
+
+	ts.removeAllRecords()
+	userModel := ts.saveUserModel()
+
+	ts.app.Put("/user", ts.usrSvc.CreateUser)
+
+	marshal, err := json.Marshal("test")
+	if err != nil {
+		return
+	}
+
+	requestBuffer := bytes.NewBuffer(marshal)
+
+	req := httptest.NewRequest("PUT", "/user/"+userModel.ID.String(), requestBuffer)
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
+	}
+
+	ts.Equal(fiber.StatusBadRequest, resp.StatusCode)
+}
+
+func (ts *e2eTestSuite) TestUserService_UpdateWrongId() {
+
+	ts.removeAllRecords()
+	ts.saveUserModel()
+
+	ts.app.Put("/user", ts.usrSvc.CreateUser)
+
+	marshal, err := json.Marshal("test")
+	if err != nil {
+		return
+	}
+
+	requestBuffer := bytes.NewBuffer(marshal)
+
+	req := httptest.NewRequest("PUT", "/user/312342354642", requestBuffer)
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
+	}
+
+	ts.Equal(fiber.StatusBadRequest, resp.StatusCode)
+}
+
+func (ts *e2eTestSuite) TestUserService_UpdateWrongUser() {
+
+	ts.removeAllRecords()
+
+	ts.app.Put("/user/:id", ts.usrSvc.UpdateUser)
+
+	marshal, err := json.Marshal(ts.getUpdateUserModel())
+	if err != nil {
+		return
+	}
+
+	requestBuffer := bytes.NewBuffer(marshal)
+
+	req := httptest.NewRequest("PUT", "/user/12312312312312", requestBuffer)
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
+	}
+
+	ts.Equal(fiber.StatusBadRequest, resp.StatusCode)
+}
+
 func (ts *e2eTestSuite) TestUserService_DeleteUser() {
 
 	ts.removeAllRecords()
@@ -275,6 +428,31 @@ func (ts *e2eTestSuite) TestUserService_DeleteUser() {
 
 	ts.Equal(fiber.StatusOK, resp.StatusCode)
 	ts.Equal(0, len(users))
+
+}
+
+func (ts *e2eTestSuite) TestUserService_DeleteWrongUser() {
+
+	ts.removeAllRecords()
+
+	ts.app.Delete("/user/:id", ts.usrSvc.DeleteUser)
+
+	marshal, err := json.Marshal(ts.getUpdateUserModel())
+	if err != nil {
+		return
+	}
+
+	requestBuffer := bytes.NewBuffer(marshal)
+
+	req := httptest.NewRequest("DELETE", "/user/3123213", requestBuffer)
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
+	}
+
+	ts.Equal(fiber.StatusBadRequest, resp.StatusCode)
 
 }
 
@@ -314,6 +492,44 @@ func (ts *e2eTestSuite) TestUserService_GetUser() {
 
 	ts.Equal(fiber.StatusOK, resp.StatusCode)
 	ts.Equal("test", user.NickName)
+
+}
+
+func (ts *e2eTestSuite) TestUserService_GetUserWrongId() {
+
+	ts.removeAllRecords()
+	ts.saveUserModel()
+
+	ts.app.Get("/user/:id", ts.usrSvc.GetUser)
+
+	req := httptest.NewRequest("GET", "/user/34253623564", nil)
+	req.Header.Add("Content-Type", "application/json")
+
+	resp, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
+	}
+
+	answer, err := io.ReadAll(resp.Body)
+
+	var response model.Response
+	err = json.Unmarshal(answer, &response)
+	if err != nil {
+		return
+	}
+
+	var user model.User
+	str, err := json.Marshal(response.Data)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(str, &user)
+	if err != nil {
+		return
+	}
+
+	ts.Equal(fiber.StatusBadRequest, resp.StatusCode)
 
 }
 
@@ -365,6 +581,27 @@ func (ts *e2eTestSuite) TestUserService_GetAllUserWithParams() {
 	ts.app.Get("/user/", ts.usrSvc.GetAllUser)
 
 	req := httptest.NewRequest("GET", "/user/?limit=1&page=1", nil)
+	req.Header.Add("Content-Type", "application/json")
+
+	_, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
+	}
+
+	users := ts.getRecords()
+
+	ts.Equal(1, len(users))
+
+}
+
+func (ts *e2eTestSuite) TestUserService_GetAllUserWithWrongParams() {
+
+	ts.removeAllRecords()
+	ts.saveUserModel()
+
+	ts.app.Get("/user/", ts.usrSvc.GetAllUser)
+
+	req := httptest.NewRequest("GET", "/user/?limit=dasda&page=dadas", nil)
 	req.Header.Add("Content-Type", "application/json")
 
 	_, err := ts.app.Test(req, 10000)
