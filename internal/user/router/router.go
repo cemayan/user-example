@@ -3,7 +3,6 @@ package router
 import (
 	"github.com/cemayan/faceit-technical-test/config/user"
 	"github.com/cemayan/faceit-technical-test/internal/user/database"
-	"github.com/cemayan/faceit-technical-test/internal/user/middleware"
 	"github.com/cemayan/faceit-technical-test/internal/user/repo"
 	"github.com/cemayan/faceit-technical-test/internal/user/service"
 	"github.com/gofiber/adaptor/v2"
@@ -33,18 +32,15 @@ func SetupRoutes(app *fiber.App, log *log.Logger, configs *user.AppConfig) {
 
 	userRepo := repo.NewUserRepo(database.DB, log)
 
-	var authSvc service.AuthService
-	authSvc = service.NewAuthService(userRepo, log, configs)
-
 	var userSvc service.UserService
-	userSvc = service.NewUserService(userRepo, authSvc, log, configs)
+	userSvc = service.NewUserService(userRepo, log, configs)
 
 	v1.Get("/health", userSvc.HealthCheck)
 
 	userGroup := v1.Group("/user")
-	userGroup.Get("/", middleware.Protected(configs), userSvc.GetAllUser)
-	userGroup.Get("/:id", middleware.Protected(configs), userSvc.GetUser)
+	userGroup.Get("/", userSvc.GetAllUser)
+	userGroup.Get("/:id", userSvc.GetUser)
 	userGroup.Post("/", userSvc.CreateUser)
-	userGroup.Put("/:id", middleware.Protected(configs), userSvc.UpdateUser)
-	userGroup.Delete("/:id", middleware.Protected(configs), userSvc.DeleteUser)
+	userGroup.Put("/:id", userSvc.UpdateUser)
+	userGroup.Delete("/:id", userSvc.DeleteUser)
 }

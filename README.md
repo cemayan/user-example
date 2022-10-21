@@ -2,9 +2,7 @@
 
 ### Introduction
 
-The project consists of five microservices
-- Auth
-- Auth(gRPC)
+The project consists of three microservices
 - User
 - User(gRPC)
 - gRPC Event Server
@@ -19,8 +17,8 @@ You can use this API in 3 ways:
 - gRPC
 - ---
 
-- If you want to use HTTP you should use **user** and **auth** microservices.
-- If you want to use HTTP with gRPC you should use **user_grpc** and **auth_grpc** microservices.
+- If you want to use HTTP you should use **user**  microservice.
+- If you want to use HTTP with gRPC you should use **user_grpc**  microservice.
 - If you want to use  gRPC you should use **gRPCEventServer** microservice.
 
 > You can use **[evans](https://github.com/ktr0731/evans)** to test gRPC server
@@ -70,12 +68,6 @@ AggregateType Enum
 
 ### Docs
 
-You can reach to auth swagger doc on this link
-[http://localhost:8109/api/v1/swagger](http://localhost:8109/api/v1/swagger)
-
-You can reach to auth_grpc swagger doc on this link
-[http://localhost:8110/api/v1/swagger](http://localhost:8110/api/v1/swagger)
-
 You can reach to user swagger doc on this link
 [http://localhost:8089/api/v1/swagger](http://localhost:8089/api/v1/swagger)
 
@@ -91,7 +83,6 @@ ENV="test" go test -v -cover ./... -coverpkg=./internal/user/... -coverprofile=c
 go tool cover -html=coverage.out     
 ```
 
-![image](image/test.png)
 ---
 
 ### Example Requests

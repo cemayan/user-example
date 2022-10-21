@@ -45,21 +45,6 @@ services:
       - postgresql
     networks:
       - faceit
-  auth:
-    build:
-      context: ../
-      dockerfile: build/auth/Dockerfile
-    container_name: auth_service
-    pull_policy: build
-    ports:
-      - "8109:8109"
-    restart: always
-    environment:
-      - ENV=docker
-    depends_on:
-      - postgresql
-    networks:
-      - faceit
   user_grpc:
     build:
       context: ../
@@ -69,21 +54,6 @@ services:
     pull_policy: build
     ports:
       - "8092:8092"
-    restart: always
-    environment:
-      - ENV=docker
-    depends_on:
-      - postgresql
-    networks:
-      - faceit
-  auth_grpc:
-    build:
-      context: ../
-      dockerfile: build/auth_grpc/Dockerfile
-    container_name: auth_grpc
-    pull_policy: build
-    ports:
-      - "8110:8110"
     restart: always
     environment:
       - ENV=docker
