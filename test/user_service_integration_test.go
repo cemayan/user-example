@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"github.com/cemayan/faceit-technical-test/config/user"
-	"github.com/cemayan/faceit-technical-test/internal/user/middleware"
 	"github.com/cemayan/faceit-technical-test/internal/user/model"
 	"github.com/cemayan/faceit-technical-test/internal/user/repo"
 	"github.com/cemayan/faceit-technical-test/internal/user/router"
@@ -29,7 +28,6 @@ type e2eTestSuite struct {
 	app       *fiber.App
 	db        *gorm.DB
 	usrSvc    service.UserService
-	authSvc   service.AuthService
 	configs   *user.AppConfig
 	v         *viper.Viper
 	dbHandler postgres.DBHandler
@@ -65,10 +63,8 @@ func (ts *e2eTestSuite) SetupSuite() {
 	util.MigrateDB(ts.db)
 
 	userRepo := repo.NewUserRepo(ts.db, log.New())
-	authSvc := service.NewAuthService(userRepo, log.New(), ts.configs)
-	ts.authSvc = authSvc
 
-	userSvc := service.NewUserService(userRepo, authSvc, log.New(), ts.configs)
+	userSvc := service.NewUserService(userRepo, log.New(), ts.configs)
 	ts.usrSvc = userSvc
 
 }
@@ -99,44 +95,11 @@ func (ts *e2eTestSuite) getUpdateUserModel() dto.UpdateUser {
 	return user
 }
 
-func (ts *e2eTestSuite) getAuthModel() model.LoginInput {
-	var login model.LoginInput
-	login.Nickname = "test"
-	login.Password = "123"
-	return login
-}
-
 func (ts *e2eTestSuite) getWrongAuthModel() model.LoginInput {
 	var login model.LoginInput
 	login.Nickname = "test"
 	login.Password = "1234"
 	return login
-}
-
-func (ts *e2eTestSuite) getToken() string {
-
-	ts.app.Post("/getToken", ts.authSvc.Login)
-
-	marshal, err := json.Marshal(ts.getAuthModel())
-	if err != nil {
-		return ""
-	}
-
-	requestBuffer := bytes.NewBuffer(marshal)
-
-	req := httptest.NewRequest("POST", "/getToken", requestBuffer)
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, err := ts.app.Test(req, 10000)
-	if err != nil {
-		return ""
-	}
-
-	answer, err := io.ReadAll(resp.Body)
-
-	var response model.Response
-	err = json.Unmarshal(answer, &response)
-	return response.Message
 }
 
 func (ts *e2eTestSuite) saveUserModel() model.User {
@@ -254,136 +217,12 @@ func (ts *e2eTestSuite) TestUserService_SameNickname() {
 	ts.Equal(fiber.StatusBadRequest, resp.StatusCode)
 }
 
-func (ts *e2eTestSuite) TestAuthService_SuccessLogin() {
-	ts.removeAllRecords()
-	ts.saveUserModel()
-
-	ts.app.Post("/getToken", ts.authSvc.Login)
-	marshal, err := json.Marshal(ts.getAuthModel())
-	if err != nil {
-		return
-	}
-
-	requestBuffer := bytes.NewBuffer(marshal)
-
-	req := httptest.NewRequest("POST", "/getToken", requestBuffer)
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, err := ts.app.Test(req, 10000)
-	if err != nil {
-		return
-	}
-
-	answer, err := io.ReadAll(resp.Body)
-
-	var response model.Response
-	err = json.Unmarshal(answer, &response)
-
-	ts.Equal(fiber.StatusOK, resp.StatusCode)
-}
-
-func (ts *e2eTestSuite) TestAuthService_FailedLogin() {
-	ts.removeAllRecords()
-	ts.saveUserModel()
-
-	ts.app.Post("/getToken", ts.authSvc.Login)
-	marshal, err := json.Marshal(ts.getWrongAuthModel())
-	if err != nil {
-		return
-	}
-
-	requestBuffer := bytes.NewBuffer(marshal)
-
-	req := httptest.NewRequest("POST", "/getToken", requestBuffer)
-	req.Header.Add("Content-Type", "application/json")
-
-	resp, err := ts.app.Test(req, 10000)
-	if err != nil {
-		return
-	}
-
-	answer, err := io.ReadAll(resp.Body)
-
-	var response model.Response
-	err = json.Unmarshal(answer, &response)
-
-	ts.Equal(fiber.StatusUnauthorized, resp.StatusCode)
-}
-
 func (ts *e2eTestSuite) TestUserService_UpdateUser() {
 
 	ts.removeAllRecords()
 	userModel := ts.saveUserModel()
 
-	token := ts.getToken()
-	if token != "" {
-		ts.app.Put("/user/:id", middleware.Protected(ts.configs), ts.usrSvc.UpdateUser)
-
-		marshal, err := json.Marshal(ts.getUpdateUserModel())
-		if err != nil {
-			return
-		}
-
-		requestBuffer := bytes.NewBuffer(marshal)
-
-		req := httptest.NewRequest("PUT", "/user/"+userModel.ID.String(), requestBuffer)
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", "Bearer "+token)
-
-		resp, err := ts.app.Test(req, 10000)
-		if err != nil {
-			return
-		}
-
-		users := ts.getRecords()
-
-		if len(users) > 0 {
-			ts.Equal(fiber.StatusOK, resp.StatusCode)
-			ts.Equal("test4", users[0].NickName)
-		}
-	}
-
-}
-
-func (ts *e2eTestSuite) TestUserService_UpdateUserWhenWrongUser() {
-
-	ts.removeAllRecords()
-	ts.saveUserModel()
-
-	token := ts.getToken()
-	if token != "" {
-		ts.app.Put("/user/:id", middleware.Protected(ts.configs), ts.usrSvc.UpdateUser)
-
-		marshal, err := json.Marshal(ts.getUpdateUserModel())
-		if err != nil {
-			return
-		}
-
-		requestBuffer := bytes.NewBuffer(marshal)
-
-		req := httptest.NewRequest("PUT", "/user/1231231", requestBuffer)
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", "Bearer "+token)
-
-		resp, err := ts.app.Test(req, 10000)
-		if err != nil {
-			return
-		}
-
-		ts.Equal(fiber.StatusUnauthorized, resp.StatusCode)
-
-	}
-
-}
-
-func (ts *e2eTestSuite) TestUserService_UpdateUserWhenWrongToken() {
-
-	ts.removeAllRecords()
-	userModel := ts.saveUserModel()
-
-	token := "test"
-
-	ts.app.Put("/user/:id", middleware.Protected(ts.configs), ts.usrSvc.UpdateUser)
+	ts.app.Put("/user/:id", ts.usrSvc.UpdateUser)
 
 	marshal, err := json.Marshal(ts.getUpdateUserModel())
 	if err != nil {
@@ -394,14 +233,19 @@ func (ts *e2eTestSuite) TestUserService_UpdateUserWhenWrongToken() {
 
 	req := httptest.NewRequest("PUT", "/user/"+userModel.ID.String(), requestBuffer)
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+token)
 
 	resp, err := ts.app.Test(req, 10000)
 	if err != nil {
 		return
 	}
 
-	ts.Equal(fiber.StatusUnauthorized, resp.StatusCode)
+	users := ts.getRecords()
+
+	if len(users) > 0 {
+		ts.Equal(fiber.StatusOK, resp.StatusCode)
+		ts.Equal("test4", users[0].NickName)
+
+	}
 
 }
 
@@ -410,73 +254,7 @@ func (ts *e2eTestSuite) TestUserService_DeleteUser() {
 	ts.removeAllRecords()
 	userModel := ts.saveUserModel()
 
-	token := ts.getToken()
-	if token != "" {
-		ts.app.Delete("/user/:id", middleware.Protected(ts.configs), ts.usrSvc.DeleteUser)
-
-		marshal, err := json.Marshal(ts.getUpdateUserModel())
-		if err != nil {
-			return
-		}
-
-		requestBuffer := bytes.NewBuffer(marshal)
-
-		req := httptest.NewRequest("DELETE", "/user/"+userModel.ID.String(), requestBuffer)
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", "Bearer "+token)
-
-		resp, err := ts.app.Test(req, 10000)
-		if err != nil {
-			return
-		}
-
-		users := ts.getRecords()
-
-		ts.Equal(fiber.StatusOK, resp.StatusCode)
-		ts.Equal(0, len(users))
-
-	}
-
-}
-
-func (ts *e2eTestSuite) TestUserService_DeleteUserWhenWrongUser() {
-
-	ts.removeAllRecords()
-	ts.saveUserModel()
-
-	token := ts.getToken()
-	if token != "" {
-		ts.app.Delete("/user/:id", middleware.Protected(ts.configs), ts.usrSvc.DeleteUser)
-
-		marshal, err := json.Marshal(ts.getUpdateUserModel())
-		if err != nil {
-			return
-		}
-
-		requestBuffer := bytes.NewBuffer(marshal)
-
-		req := httptest.NewRequest("DELETE", "/user/adadasdas", requestBuffer)
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", "Bearer "+token)
-
-		resp, err := ts.app.Test(req, 10000)
-		if err != nil {
-			return
-		}
-
-		ts.Equal(fiber.StatusUnauthorized, resp.StatusCode)
-
-	}
-
-}
-
-func (ts *e2eTestSuite) TestUserService_DeleteUserWhenWrongToken() {
-
-	ts.removeAllRecords()
-	userModel := ts.saveUserModel()
-
-	token := "test"
-	ts.app.Delete("/user/:id", middleware.Protected(ts.configs), ts.usrSvc.DeleteUser)
+	ts.app.Delete("/user/:id", ts.usrSvc.DeleteUser)
 
 	marshal, err := json.Marshal(ts.getUpdateUserModel())
 	if err != nil {
@@ -487,14 +265,16 @@ func (ts *e2eTestSuite) TestUserService_DeleteUserWhenWrongToken() {
 
 	req := httptest.NewRequest("DELETE", "/user/"+userModel.ID.String(), requestBuffer)
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+token)
 
 	resp, err := ts.app.Test(req, 10000)
 	if err != nil {
 		return
 	}
 
-	ts.Equal(fiber.StatusUnauthorized, resp.StatusCode)
+	users := ts.getRecords()
+
+	ts.Equal(fiber.StatusOK, resp.StatusCode)
+	ts.Equal(0, len(users))
 
 }
 
@@ -503,57 +283,10 @@ func (ts *e2eTestSuite) TestUserService_GetUser() {
 	ts.removeAllRecords()
 	userModel := ts.saveUserModel()
 
-	token := ts.getToken()
-	if token != "" {
-		ts.app.Get("/user/:id", middleware.Protected(ts.configs), ts.usrSvc.GetUser)
-
-		req := httptest.NewRequest("GET", "/user/"+userModel.ID.String(), nil)
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", "Bearer "+token)
-
-		resp, err := ts.app.Test(req, 10000)
-		if err != nil {
-			return
-		}
-
-		answer, err := io.ReadAll(resp.Body)
-
-		var response model.Response
-		err = json.Unmarshal(answer, &response)
-		if err != nil {
-			return
-		}
-
-		var user model.User
-		str, err := json.Marshal(response.Data)
-		if err != nil {
-			return
-		}
-
-		err = json.Unmarshal(str, &user)
-		if err != nil {
-			return
-		}
-
-		ts.Equal(fiber.StatusOK, resp.StatusCode)
-		ts.Equal("test", user.NickName)
-
-	}
-
-}
-
-func (ts *e2eTestSuite) TestUserService_GetUserWhenWrongToken() {
-
-	ts.removeAllRecords()
-	userModel := ts.saveUserModel()
-
-	token := "test"
-
-	ts.app.Get("/user/:id", middleware.Protected(ts.configs), ts.usrSvc.GetUser)
+	ts.app.Get("/user/:id", ts.usrSvc.GetUser)
 
 	req := httptest.NewRequest("GET", "/user/"+userModel.ID.String(), nil)
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+token)
 
 	resp, err := ts.app.Test(req, 10000)
 	if err != nil {
@@ -568,7 +301,19 @@ func (ts *e2eTestSuite) TestUserService_GetUserWhenWrongToken() {
 		return
 	}
 
-	ts.Equal(fiber.StatusUnauthorized, resp.StatusCode)
+	var user model.User
+	str, err := json.Marshal(response.Data)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(str, &user)
+	if err != nil {
+		return
+	}
+
+	ts.Equal(fiber.StatusOK, resp.StatusCode)
+	ts.Equal("test", user.NickName)
 
 }
 
@@ -577,23 +322,19 @@ func (ts *e2eTestSuite) TestUserService_GetAllUser() {
 	ts.removeAllRecords()
 	ts.saveUserModel()
 
-	token := ts.getToken()
-	if token != "" {
-		ts.app.Get("/user/", middleware.Protected(ts.configs), ts.usrSvc.GetAllUser)
+	ts.app.Get("/user/", ts.usrSvc.GetAllUser)
 
-		req := httptest.NewRequest("GET", "/user/", nil)
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", "Bearer "+token)
+	req := httptest.NewRequest("GET", "/user/", nil)
+	req.Header.Add("Content-Type", "application/json")
 
-		resp, err := ts.app.Test(req, 10000)
-		if err != nil {
-			return
-		}
-
-		users := ts.getRecords()
-		ts.Equal(fiber.StatusOK, resp.StatusCode)
-		ts.Equal(1, len(users))
+	resp, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
 	}
+
+	users := ts.getRecords()
+	ts.Equal(fiber.StatusOK, resp.StatusCode)
+	ts.Equal(1, len(users))
 
 }
 
@@ -602,22 +343,17 @@ func (ts *e2eTestSuite) TestUserService_GetAllUserWrongQueryParams() {
 	ts.removeAllRecords()
 	ts.saveUserModel()
 
-	token := ts.getToken()
-	if token != "" {
-		ts.app.Get("/user/", middleware.Protected(ts.configs), ts.usrSvc.GetAllUser)
+	ts.app.Get("/user/", ts.usrSvc.GetAllUser)
 
-		req := httptest.NewRequest("GET", "/user/?limit=abc", nil)
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", "Bearer "+token)
+	req := httptest.NewRequest("GET", "/user/?limit=abc", nil)
+	req.Header.Add("Content-Type", "application/json")
 
-		resp, err := ts.app.Test(req, 10000)
-		if err != nil {
-			return
-		}
-
-		ts.Equal(fiber.StatusBadRequest, resp.StatusCode)
-
+	resp, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
 	}
+
+	ts.Equal(fiber.StatusBadRequest, resp.StatusCode)
 
 }
 
@@ -626,24 +362,19 @@ func (ts *e2eTestSuite) TestUserService_GetAllUserWithParams() {
 	ts.removeAllRecords()
 	ts.saveUserModel()
 
-	token := ts.getToken()
-	if token != "" {
-		ts.app.Get("/user/", middleware.Protected(ts.configs), ts.usrSvc.GetAllUser)
+	ts.app.Get("/user/", ts.usrSvc.GetAllUser)
 
-		req := httptest.NewRequest("GET", "/user/?limit=1&page=1", nil)
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", "Bearer "+token)
+	req := httptest.NewRequest("GET", "/user/?limit=1&page=1", nil)
+	req.Header.Add("Content-Type", "application/json")
 
-		_, err := ts.app.Test(req, 10000)
-		if err != nil {
-			return
-		}
-
-		users := ts.getRecords()
-
-		ts.Equal(1, len(users))
-
+	_, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
 	}
+
+	users := ts.getRecords()
+
+	ts.Equal(1, len(users))
 
 }
 
@@ -652,22 +383,18 @@ func (ts *e2eTestSuite) TestUserService_GetAllUserWithParams2() {
 	ts.removeAllRecords()
 	ts.saveUserModel()
 
-	token := ts.getToken()
-	if token != "" {
-		ts.app.Get("/user/", middleware.Protected(ts.configs), ts.usrSvc.GetAllUser)
+	ts.app.Get("/user/", ts.usrSvc.GetAllUser)
 
-		req := httptest.NewRequest("GET", "/user/?limit=1&page=1&cQuery=country%20%3D%20%3F&cValue=UK", nil)
-		req.Header.Add("Content-Type", "application/json")
-		req.Header.Add("Authorization", "Bearer "+token)
+	req := httptest.NewRequest("GET", "/user/?limit=1&page=1&cQuery=country%20%3D%20%3F&cValue=UK", nil)
+	req.Header.Add("Content-Type", "application/json")
 
-		_, err := ts.app.Test(req, 10000)
-		if err != nil {
-			return
-		}
-
-		users := ts.getRecords()
-
-		ts.Equal(1, len(users))
+	_, err := ts.app.Test(req, 10000)
+	if err != nil {
+		return
 	}
+
+	users := ts.getRecords()
+
+	ts.Equal(1, len(users))
 
 }

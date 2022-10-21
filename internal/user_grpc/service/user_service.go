@@ -28,7 +28,6 @@ type GrpcUserService interface {
 // A UserSvc  contains the required dependencies for this service
 type GrpcUserSvc struct {
 	repository repo.GrpcUserRepository
-	authSvc    GrpcAuthService
 	log        *log.Logger
 	grpcClient pb.EventGrpcServiceClient
 	configs    *user.AppConfig
@@ -160,22 +159,11 @@ func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 // @Security Bearer
 func (s GrpcUserSvc) UpdateUser(c *fiber.Ctx) error {
 
-	token, _ := util.GetTokenFromHeaders(c, s.configs)
-
 	id := c.Params("id")
 	if id == "" {
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			StatusCode: 400,
 			Message:    fmt.Sprintf("Review your id %v", id),
-		})
-	}
-
-	isValidUser := s.authSvc.isValidUserId(token, id)
-
-	if !isValidUser {
-		return c.Status(fiber.StatusUnauthorized).JSON(model.Response{
-			StatusCode: 401,
-			Message:    fmt.Sprintf("Given token has invalid user id"),
 		})
 	}
 
@@ -218,17 +206,7 @@ func (s GrpcUserSvc) UpdateUser(c *fiber.Ctx) error {
 // @Security Bearer
 func (s GrpcUserSvc) DeleteUser(c *fiber.Ctx) error {
 
-	token, _ := util.GetTokenFromHeaders(c, s.configs)
-
 	id := c.Params("id")
-
-	isValidUser := s.authSvc.isValidUserId(token, id)
-	if !isValidUser {
-		return c.Status(fiber.StatusUnauthorized).JSON(model.Response{
-			StatusCode: 401,
-			Message:    fmt.Sprintf("Given token has invalid user id"),
-		})
-	}
 
 	handleEvent, err := s.grpcClient.HandleEvent(context.Background())
 	if err != nil {
@@ -261,10 +239,9 @@ func (s GrpcUserSvc) DeleteUser(c *fiber.Ctx) error {
 
 }
 
-func NewGrpcUserService(rep repo.GrpcUserRepository, authSvc GrpcAuthService, grpcClient event.EventGrpcServiceClient, log *log.Logger, configs *user.AppConfig) GrpcUserService {
+func NewGrpcUserService(rep repo.GrpcUserRepository, grpcClient event.EventGrpcServiceClient, log *log.Logger, configs *user.AppConfig) GrpcUserService {
 	return &GrpcUserSvc{
 		repository: rep,
-		authSvc:    authSvc,
 		grpcClient: grpcClient,
 		log:        log,
 		configs:    configs,

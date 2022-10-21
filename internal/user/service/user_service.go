@@ -6,7 +6,6 @@ import (
 	"github.com/cemayan/faceit-technical-test/internal/user/dto"
 	"github.com/cemayan/faceit-technical-test/internal/user/model"
 	"github.com/cemayan/faceit-technical-test/internal/user/repo"
-	"github.com/cemayan/faceit-technical-test/internal/user/util"
 	"github.com/cemayan/faceit-technical-test/pkg/common"
 	"github.com/gofiber/fiber/v2"
 	log "github.com/sirupsen/logrus"
@@ -26,7 +25,6 @@ type UserService interface {
 // A UserSvc  contains the required dependencies for this service
 type UserSvc struct {
 	repository repo.UserRepository
-	authSvc    AuthService
 	log        *log.Logger
 	configs    *user.AppConfig
 }
@@ -173,8 +171,6 @@ func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 // @Security Bearer
 func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 
-	token, _ := util.GetTokenFromHeaders(c, s.configs)
-
 	var userDTO dto.UpdateUser
 	if err := c.BodyParser(&userDTO); err != nil {
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
@@ -188,15 +184,6 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			StatusCode: 400,
 			Message:    fmt.Sprintf("Review your id %v", id),
-		})
-	}
-
-	isValidUser := s.authSvc.isValidUserId(token, id)
-
-	if !isValidUser {
-		return c.Status(fiber.StatusUnauthorized).JSON(model.Response{
-			StatusCode: 401,
-			Message:    fmt.Sprintf("Given token has invalid user id"),
 		})
 	}
 
@@ -274,18 +261,7 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 // @Router   /{id} [delete]
 // @Security Bearer
 func (s UserSvc) DeleteUser(c *fiber.Ctx) error {
-
-	token, _ := util.GetTokenFromHeaders(c, s.configs)
-
 	id := c.Params("id")
-
-	isValidUser := s.authSvc.isValidUserId(token, id)
-	if !isValidUser {
-		return c.Status(fiber.StatusUnauthorized).JSON(model.Response{
-			StatusCode: 401,
-			Message:    fmt.Sprintf("Given token has invalid user id"),
-		})
-	}
 
 	err := s.repository.DeleteUser(id)
 	if err != nil {
@@ -301,10 +277,9 @@ func (s UserSvc) DeleteUser(c *fiber.Ctx) error {
 	}
 }
 
-func NewUserService(rep repo.UserRepository, authSvc AuthService, log *log.Logger, configs *user.AppConfig) UserService {
+func NewUserService(rep repo.UserRepository, log *log.Logger, configs *user.AppConfig) UserService {
 	return &UserSvc{
 		repository: rep,
-		authSvc:    authSvc,
 		log:        log,
 		configs:    configs,
 	}

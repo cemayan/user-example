@@ -19,9 +19,6 @@ type Config struct {
 
 // AppConfig is representation of a OS Env values
 type AppConfig struct {
-	SECRET     string
-	GOARCH     string
-	GOOS       string
 	Postgresql common.Postgresql
 	Grpc       common.Grpc
 }

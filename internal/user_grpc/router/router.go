@@ -3,7 +3,6 @@ package router
 import (
 	"github.com/cemayan/faceit-technical-test/config/user"
 	"github.com/cemayan/faceit-technical-test/internal/user_grpc/database"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/middleware"
 	"github.com/cemayan/faceit-technical-test/internal/user_grpc/repo"
 	"github.com/cemayan/faceit-technical-test/internal/user_grpc/service"
 	pb "github.com/cemayan/faceit-technical-test/protos/event"
@@ -34,16 +33,13 @@ func SetupGrpcRoutes(app *fiber.App, log *log.Logger, client pb.EventGrpcService
 
 	userRepo := repo.NewGrpcUserRepo(database.DB, log)
 
-	var authSvc service.GrpcAuthService
-	authSvc = service.NewAuthService(userRepo, log, configs)
-
 	var userSvc service.GrpcUserService
-	userSvc = service.NewGrpcUserService(userRepo, authSvc, client, log, configs)
+	userSvc = service.NewGrpcUserService(userRepo, client, log, configs)
 
 	userGroup := v1.Group("/user")
-	userGroup.Get("/", middleware.Protected(configs), userSvc.GetAllUser)
-	userGroup.Get("/:id?", middleware.Protected(configs), userSvc.GetUser)
+	userGroup.Get("/", userSvc.GetAllUser)
+	userGroup.Get("/:id", userSvc.GetUser)
 	userGroup.Post("/", userSvc.CreateUser)
-	userGroup.Put("/:id", middleware.Protected(configs), userSvc.UpdateUser)
-	userGroup.Delete("/:id", middleware.Protected(configs), userSvc.DeleteUser)
+	userGroup.Put("/:id", userSvc.UpdateUser)
+	userGroup.Delete("/:id", userSvc.DeleteUser)
 }

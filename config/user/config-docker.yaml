@@ -7,4 +7,3 @@ postgresql:
 grpc:
   ADDR: grpc_server
   PORT: 50051
-SECRET: secret
