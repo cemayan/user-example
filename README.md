@@ -1,5 +1,7 @@
 # faceit-technical-test
 
+[![Faceit](https://github.com/cemayan/faceit-technical-test/actions/workflows/push.yml/badge.svg)](https://github.com/cemayan/faceit-technical-test/actions/workflows/push.yml)
+
 ### Introduction
 
 The project consists of three microservices
