@@ -31,7 +31,7 @@ You can use this API in 3 ways:
 
 You can find under the  **protos** folder of project
 
-![test_coverage](assets/test_coverage.png)
+
 --- 
 
 ### Usage
@@ -59,7 +59,7 @@ You can check the test coverage
 ENV="test" go test -v -cover ./... -coverpkg=./internal/user/... -coverprofile=coverage.out 
 go tool cover -html=coverage.out     
 ```
-
+![test_coverage](assets/test_coverage.png)
 ---
 
 ### Example Requests
