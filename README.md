@@ -31,6 +31,7 @@ You can use this API in 3 ways:
 
 You can find under the  **protos** folder of project
 
+![test_coverage](assets/test_coverage.png)
 --- 
 
 ### Usage
