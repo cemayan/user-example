@@ -59,8 +59,7 @@ You can reach to user_grpc swagger doc on this link(HTTP with gRPC)
 You can check the test coverage.
 
 ```shell
-ENV="test" go test -v -cover ./... -coverpkg=./internal/user/... -coverprofile=coverage.out 
-go tool cover -html=coverage.out     
+ ENV="test" go test -v test/user_service_integration_test.go  -coverpkg=./internal/user/... -coverprofile=coverage.out      
 ```
 ![test_coverage](assets/test_coverage.png)
 
@@ -69,8 +68,8 @@ For gPRC server:
 
 You should exec to **grpc_server_test** container. (**user_grpc** needs to have one grpc_server for testing)
 ```shell
-ENV="test" go test -v -cover ./...  -coverpkg=./internal/user_grpc/... -coverprofile=coverage_grpc.out
-go tool cover -html=coverage_grpc.out     
+ ENV="test" go test -v test/user_grpc_service_integration_test.go  -coverpkg=./internal/user/... -coverprofile=coverage.out 
+ 
 ```
 
 ---
