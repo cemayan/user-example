@@ -85,8 +85,6 @@ func (s UserSvc) HashPassword(password string) (string, error) {
 // @Param    id path string true "id"
 // @Tags     User
 // @Router   /{id} [get]
-// @Security Bearer
-// @Security Bearer
 func (s UserSvc) GetUser(c *fiber.Ctx) error {
 
 	id := c.Params("id")
@@ -118,7 +116,6 @@ func (s UserSvc) GetUser(c *fiber.Ctx) error {
 // @Param    request body model.User true "query params"
 // @Tags     User
 // @Router   / [post]
-// @Security Bearer
 func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 
 	user := new(model.User)
@@ -187,7 +184,6 @@ func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 // @Param    request body dto.UpdateUser true "query params"
 // @Tags     User
 // @Router   /{id} [put]
-// @Security Bearer
 func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 
 	var userDTO dto.UpdateUser
@@ -266,7 +262,6 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 // @Param    id path string true "id"
 // @Tags     User
 // @Router   /{id} [delete]
-// @Security Bearer
 func (s UserSvc) DeleteUser(c *fiber.Ctx) error {
 	id := c.Params("id")
 

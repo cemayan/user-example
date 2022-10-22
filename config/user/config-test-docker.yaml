@@ -1,9 +1,9 @@
 postgresql:
-  HOST: localhost
-  NAME: faceit_test
+  HOST: postgresql
+  NAME: faceit
   PASSWORD: password
-  PORT: 5435
+  PORT: 5438
   USER: postgres
 grpc:
-  ADDR: localhost
+  ADDR: grpc_server
   PORT: 50052

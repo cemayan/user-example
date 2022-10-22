@@ -36,7 +36,11 @@ func (uh UserHandler) Handle() error {
 
 		createUser, err := uh.userRepo.CreateUser(&user)
 		if err != nil {
-			return err
+			uh.eventServer.Send(&pb.Response{
+				Data:       []byte(err.Error()),
+				StatusCode: 400,
+			})
+
 		} else {
 			response, _ := json.Marshal(createUser)
 			err := uh.eventServer.Send(&pb.Response{

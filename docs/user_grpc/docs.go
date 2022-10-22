@@ -22,11 +22,6 @@ const docTemplate = `{
     "paths": {
         "/": {
             "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
                 "tags": [
                     "User"
                 ],
@@ -90,33 +85,8 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/getToken": {
-            "post": {
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Login",
-                "parameters": [
-                    {
-                        "description": "query params",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github.com_cemayan_faceit-technical-test_internal_user_grpc_model.LoginInput"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/{id}": {
             "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
                 "tags": [
                     "User"
                 ],
@@ -133,11 +103,6 @@ const docTemplate = `{
                 "responses": {}
             },
             "put": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
                 "tags": [
                     "User"
                 ],
@@ -156,18 +121,13 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github.com_cemayan_faceit-technical-test_internal_user_grpc_dto.UpdateUser"
+                            "$ref": "#/definitions/dto.UpdateUser"
                         }
                     }
                 ],
                 "responses": {}
             },
             "delete": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
                 "tags": [
                     "User"
                 ],
@@ -186,7 +146,7 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "github.com_cemayan_faceit-technical-test_internal_user_dto.UpdateUser": {
+        "dto.UpdateUser": {
             "type": "object",
             "properties": {
                 "country": {
@@ -204,43 +164,6 @@ const docTemplate = `{
                 "last_name": {
                     "type": "string"
                 },
-                "nickname": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "github.com_cemayan_faceit-technical-test_internal_user_grpc_dto.UpdateUser": {
-            "type": "object",
-            "properties": {
-                "country": {
-                    "type": "string"
-                },
-                "email": {
-                    "type": "string"
-                },
-                "first_name": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "last_name": {
-                    "type": "string"
-                },
-                "nickname": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
-        "github.com_cemayan_faceit-technical-test_internal_user_grpc_model.LoginInput": {
-            "type": "object",
-            "properties": {
                 "nickname": {
                     "type": "string"
                 },
@@ -251,6 +174,11 @@ const docTemplate = `{
         },
         "github.com_cemayan_faceit-technical-test_internal_user_grpc_model.User": {
             "type": "object",
+            "required": [
+                "email",
+                "nickname",
+                "password"
+            ],
             "properties": {
                 "country": {
                     "type": "string"
@@ -284,19 +212,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github.com_cemayan_faceit-technical-test_internal_user_model.LoginInput": {
-            "type": "object",
-            "properties": {
-                "nickname": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
         "github.com_cemayan_faceit-technical-test_internal_user_model.User": {
             "type": "object",
+            "required": [
+                "email",
+                "nickname",
+                "password"
+            ],
             "properties": {
                 "country": {
                     "type": "string"
@@ -341,13 +263,6 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
-        }
-    },
-    "securityDefinitions": {
-        "Bearer": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
         }
     }
 }`

@@ -30,6 +30,21 @@ services:
       - postgresql
     networks:
       - faceit
+  grpc_server_test:
+    build:
+      context: ../
+      dockerfile: build/grpc_event_server/Dockerfile
+    container_name: grpc_server_test
+    pull_policy: build
+    restart: always
+    ports:
+      - "50052:50052"
+    environment:
+      - ENV=grpc_test_docker
+    depends_on:
+      - postgresql
+    networks:
+      - faceit
   user:
     build:
       context: ../

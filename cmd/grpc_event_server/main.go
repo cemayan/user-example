@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/cemayan/faceit-technical-test/config/user"
-	"github.com/cemayan/faceit-technical-test/internal/grpc_event_server/handler"
 	"github.com/cemayan/faceit-technical-test/internal/user_grpc/database"
+	"github.com/cemayan/faceit-technical-test/internal/user_grpc/handler"
 	"github.com/cemayan/faceit-technical-test/internal/user_grpc/repo"
 	"github.com/cemayan/faceit-technical-test/internal/user_grpc/util"
 	"github.com/cemayan/faceit-technical-test/pkg/postgres"
@@ -66,14 +66,19 @@ func (s server) HandleEvent(eventServer pb.EventGrpcService_HandleEventServer) e
 			_log.WithFields(logrus.Fields{"service": "grpc_event_server"}).Errorf("An error occured %s", err.Error())
 		}
 
-		switch event.AggregateType {
-		case pb.AggregateType_USER:
-			userEventHandler = handler.NewUserEventHandler(userRepo, event, eventServer, _log)
-			err = userEventHandler.Handle()
-			if err != nil {
-				_log.WithFields(logrus.Fields{"service": "grpc_event_server"}).Errorf("An error occured %s", err.Error())
+		if event != nil {
+			switch event.AggregateType {
+			case pb.AggregateType_USER:
+				userEventHandler = handler.NewUserEventHandler(userRepo, event, eventServer, _log)
+				err = userEventHandler.Handle()
+				if err != nil {
+					_log.WithFields(logrus.Fields{"service": "grpc_event_server"}).Errorf("An error occured %s", err.Error())
+				}
 			}
+		} else {
+			return err
 		}
+
 	}
 
 	return nil

@@ -52,10 +52,6 @@ func init() {
 // @license.url  http://www.apache.org/licenses/LICENSE-2.0.html
 // @host         localhost:8089
 // @BasePath     /api/v1/user
-// @securityDefinitions.apikey Bearer
-// @in                         header
-// @Tags                       User
-// @name                       Authorization
 func main() {
 
 	app.Use(cors.New(cors.Config{

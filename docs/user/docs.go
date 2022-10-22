@@ -22,11 +22,6 @@ const docTemplate = `{
     "paths": {
         "/": {
             "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
                 "tags": [
                     "User"
                 ],
@@ -90,33 +85,8 @@ const docTemplate = `{
                 "responses": {}
             }
         },
-        "/getToken": {
-            "post": {
-                "tags": [
-                    "Auth"
-                ],
-                "summary": "Login",
-                "parameters": [
-                    {
-                        "description": "query params",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/model.LoginInput"
-                        }
-                    }
-                ],
-                "responses": {}
-            }
-        },
         "/{id}": {
             "get": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
                 "tags": [
                     "User"
                 ],
@@ -133,11 +103,6 @@ const docTemplate = `{
                 "responses": {}
             },
             "put": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
                 "tags": [
                     "User"
                 ],
@@ -163,11 +128,6 @@ const docTemplate = `{
                 "responses": {}
             },
             "delete": {
-                "security": [
-                    {
-                        "Bearer": []
-                    }
-                ],
                 "tags": [
                     "User"
                 ],
@@ -224,19 +184,13 @@ const docTemplate = `{
                 }
             }
         },
-        "model.LoginInput": {
-            "type": "object",
-            "properties": {
-                "nickname": {
-                    "type": "string"
-                },
-                "password": {
-                    "type": "string"
-                }
-            }
-        },
         "model.User": {
             "type": "object",
+            "required": [
+                "email",
+                "nickname",
+                "password"
+            ],
             "properties": {
                 "country": {
                     "type": "string"
@@ -269,13 +223,6 @@ const docTemplate = `{
                     "type": "string"
                 }
             }
-        }
-    },
-    "securityDefinitions": {
-        "Bearer": {
-            "type": "apiKey",
-            "name": "Authorization",
-            "in": "header"
         }
     }
 }`

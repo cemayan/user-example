@@ -4,6 +4,9 @@
 
 ### Introduction
 
+My main motivation while doing this project was to deal with both HTTP and gRPC.
+I wanted to show you all 3 ways. I set each to run separate microservices.
+
 The project consists of three microservices
 - User
 - User(gRPC)
@@ -45,21 +48,31 @@ You can start it in docker environment
 
 ### Docs
 
-You can reach to user swagger doc on this link
+You can reach to user swagger doc on this link(HTTP)
 [http://localhost:8089/api/v1/swagger](http://localhost:8089/api/v1/swagger)
 
-You can reach to user_grpc swagger doc on this link
+You can reach to user_grpc swagger doc on this link(HTTP with gRPC)
 [http://localhost:8092/api/v1/swagger](http://localhost:8092/api/v1/swagger)
 
 ### Testing
 
-You can check the test coverage
+You can check the test coverage.
 
 ```shell
 ENV="test" go test -v -cover ./... -coverpkg=./internal/user/... -coverprofile=coverage.out 
 go tool cover -html=coverage.out     
 ```
 ![test_coverage](assets/test_coverage.png)
+
+
+For gPRC server:
+
+You should exec to **grpc_server_test** container. (**user_grpc** needs to have one grpc_server for testing)
+```shell
+ENV="test" go test -v -cover ./...  -coverpkg=./internal/user_grpc/... -coverprofile=coverage_grpc.out
+go tool cover -html=coverage_grpc.out     
+```
+
 ---
 
 ### Example Requests

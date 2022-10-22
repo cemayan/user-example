@@ -67,6 +67,10 @@ func (cfg Config) GetConfig(env string) (*AppConfig, error) {
 		path = "./app/config/user/config-prod"
 	} else if env == "test" {
 		path = "../config/user/config-test"
+	} else if env == "grpc_test_dev" {
+		path = "./config/user/config-test"
+	} else if env == "grpc_test_docker" {
+		path = "./app/config/user/config-test-docker"
 	}
 
 	v, err := cfg.LoadConfig(path)

@@ -1,6 +1,6 @@
 basePath: /api/v1/user
 definitions:
-  github.com_cemayan_faceit-technical-test_internal_user_dto.UpdateUser:
+  dto.UpdateUser:
     properties:
       country:
         type: string
@@ -12,30 +12,6 @@ definitions:
         type: string
       last_name:
         type: string
-      nickname:
-        type: string
-      password:
-        type: string
-    type: object
-  github.com_cemayan_faceit-technical-test_internal_user_grpc_dto.UpdateUser:
-    properties:
-      country:
-        type: string
-      email:
-        type: string
-      first_name:
-        type: string
-      id:
-        type: string
-      last_name:
-        type: string
-      nickname:
-        type: string
-      password:
-        type: string
-    type: object
-  github.com_cemayan_faceit-technical-test_internal_user_grpc_model.LoginInput:
-    properties:
       nickname:
         type: string
       password:
@@ -63,13 +39,10 @@ definitions:
         type: string
       updatedAt:
         type: string
-    type: object
-  github.com_cemayan_faceit-technical-test_internal_user_model.LoginInput:
-    properties:
-      nickname:
-        type: string
-      password:
-        type: string
+    required:
+    - email
+    - nickname
+    - password
     type: object
   github.com_cemayan_faceit-technical-test_internal_user_model.User:
     properties:
@@ -93,6 +66,10 @@ definitions:
         type: string
       updatedAt:
         type: string
+    required:
+    - email
+    - nickname
+    - password
     type: object
   gorm.DeletedAt:
     properties:
@@ -140,8 +117,6 @@ paths:
         name: cVal
         type: string
       responses: {}
-      security:
-      - Bearer: []
       summary: GetAllUser
       tags:
       - User
@@ -166,8 +141,6 @@ paths:
         required: true
         type: string
       responses: {}
-      security:
-      - Bearer: []
       summary: DeleteUser
       tags:
       - User
@@ -179,8 +152,6 @@ paths:
         required: true
         type: string
       responses: {}
-      security:
-      - Bearer: []
       summary: GetUser
       tags:
       - User
@@ -196,29 +167,9 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_cemayan_faceit-technical-test_internal_user_grpc_dto.UpdateUser'
+          $ref: '#/definitions/dto.UpdateUser'
       responses: {}
-      security:
-      - Bearer: []
       summary: UpdateUser
       tags:
       - User
-  /getToken:
-    post:
-      parameters:
-      - description: query params
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github.com_cemayan_faceit-technical-test_internal_user_grpc_model.LoginInput'
-      responses: {}
-      summary: Login
-      tags:
-      - Auth
-securityDefinitions:
-  Bearer:
-    in: header
-    name: Authorization
-    type: apiKey
 swagger: "2.0"

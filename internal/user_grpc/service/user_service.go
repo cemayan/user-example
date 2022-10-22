@@ -16,9 +16,11 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/bcrypt"
 )
 
 type GrpcUserService interface {
+	HashPassword(password string) (string, error)
 	GetUser(c *fiber.Ctx) error
 	GetAllUser(c *fiber.Ctx) error
 	CreateUser(c *fiber.Ctx) error
@@ -35,6 +37,12 @@ type GrpcUserSvc struct {
 	configs    *user.AppConfig
 }
 
+// HashPassword returns encrypted password based on given password
+func (s GrpcUserSvc) HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes), err
+}
+
 // GetAllUser returns filtered users based on given payload
 // @Summary  GetAllUser
 // @Param    limit path number false "limit"
@@ -45,7 +53,6 @@ type GrpcUserSvc struct {
 // @Param    cVal path string false "cVal"
 // @Tags     User
 // @Router   / [get]
-// @Security Bearer
 func (s GrpcUserSvc) GetAllUser(c *fiber.Ctx) error {
 	var pagination common.Pagination
 	err := c.QueryParser(&pagination)
@@ -83,7 +90,6 @@ func (s GrpcUserSvc) HealthCheck(c *fiber.Ctx) error {
 // @Param    id path string true "id"
 // @Tags     User
 // @Router   /{id} [get]
-// @Security Bearer
 func (s GrpcUserSvc) GetUser(c *fiber.Ctx) error {
 
 	id := c.Params("id")
@@ -167,11 +173,24 @@ func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 			StatusCode: 400,
 		})
 	} else {
+
+		if recv.StatusCode >= 400 {
+			s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("An error occured %s \n", string(recv.Data))
+			return c.Status(int(recv.StatusCode)).JSON(&model.Response{
+				Data:       string(recv.Data),
+				Message:    recv.Message,
+				StatusCode: int(recv.StatusCode),
+			})
+		}
+
 		var user model.User
-		err := json.Unmarshal(recv.Data, &user)
+		err = json.Unmarshal(recv.Data, &user)
 		if err != nil {
 			s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Couldn't unmarshall to recv.Data %s \n", err)
-			return err
+			return c.Status(fiber.StatusBadRequest).JSON(&model.Response{
+				Message:    err.Error(),
+				StatusCode: 400,
+			})
 		}
 
 		s.log.WithFields(log.Fields{"method": "CreateUser"}).Infof("User created %v \n", user)
@@ -196,7 +215,6 @@ func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 // @Param    request body dto.UpdateUser true "query params"
 // @Tags     User
 // @Router   /{id} [put]
-// @Security Bearer
 func (s GrpcUserSvc) UpdateUser(c *fiber.Ctx) error {
 
 	user := new(model.User)
@@ -241,7 +259,7 @@ func (s GrpcUserSvc) UpdateUser(c *fiber.Ctx) error {
 		}
 	}
 
-	_, err = handleEvent.Recv()
+	recv, err := handleEvent.Recv()
 	if err != nil {
 		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("An error occured  %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(&model.Response{
@@ -249,6 +267,16 @@ func (s GrpcUserSvc) UpdateUser(c *fiber.Ctx) error {
 			StatusCode: 400,
 		})
 	} else {
+
+		if recv.StatusCode >= 400 {
+			s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("An error occured %s \n", string(recv.Data))
+			return c.Status(int(recv.StatusCode)).JSON(&model.Response{
+				Data:       string(recv.Data),
+				Message:    recv.Message,
+				StatusCode: int(recv.StatusCode),
+			})
+		}
+
 		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Infof("User successfully updated \n")
 		return c.Status(fiber.StatusOK).JSON(&model.Response{
 			Message:    "User updated!",
@@ -263,7 +291,6 @@ func (s GrpcUserSvc) UpdateUser(c *fiber.Ctx) error {
 // @Param    id path string true "id"
 // @Tags     User
 // @Router   /{id} [delete]
-// @Security Bearer
 func (s GrpcUserSvc) DeleteUser(c *fiber.Ctx) error {
 
 	id := c.Params("id")
@@ -291,7 +318,7 @@ func (s GrpcUserSvc) DeleteUser(c *fiber.Ctx) error {
 		})
 	}
 
-	_, err = handleEvent.Recv()
+	recv, err := handleEvent.Recv()
 	if err != nil {
 		s.log.WithFields(log.Fields{"method": "DeleteUser"}).Errorf("An error occured  %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(&model.Response{
@@ -299,6 +326,16 @@ func (s GrpcUserSvc) DeleteUser(c *fiber.Ctx) error {
 			StatusCode: 400,
 		})
 	} else {
+
+		if recv.StatusCode >= 400 {
+			s.log.WithFields(log.Fields{"method": "DeleteUser"}).Errorf("An error occured %s \n", string(recv.Data))
+			return c.Status(int(recv.StatusCode)).JSON(&model.Response{
+				Data:       string(recv.Data),
+				Message:    recv.Message,
+				StatusCode: int(recv.StatusCode),
+			})
+		}
+
 		s.log.WithFields(log.Fields{"method": "DeleteUser"}).Errorf("User successfully deleted %v \n", id)
 		return c.Status(fiber.StatusOK).JSON(&model.Response{
 			Message:    "User successfully deleted!",
