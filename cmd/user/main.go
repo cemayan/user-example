@@ -60,13 +60,10 @@ func main() {
 	}))
 
 	if os.Getenv("ENV") == "dev" {
-
-		//_log.SetFormatter(&logrus.TextFormatter{
-		//	DisableColors: false,
-		//	FullTimestamp: true,
-		//})
-		_log.SetFormatter(&logrus.JSONFormatter{})
-		_log.SetOutput(os.Stdout)
+		_log.SetFormatter(&logrus.TextFormatter{
+			DisableColors: false,
+			FullTimestamp: true,
+		})
 	} else {
 		_log.SetFormatter(&logrus.JSONFormatter{})
 		_log.SetOutput(os.Stdout)
