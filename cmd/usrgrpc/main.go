@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/cemayan/faceit-technical-test/config/user"
-	_ "github.com/cemayan/faceit-technical-test/docs/user_grpc"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/database"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/router"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/util"
+	_ "github.com/cemayan/faceit-technical-test/docs/usrgrpc"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/database"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/router"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/util"
 	"github.com/cemayan/faceit-technical-test/pkg/postgres"
 	pb "github.com/cemayan/faceit-technical-test/protos/event"
 	"github.com/gofiber/fiber/v2"
@@ -50,7 +50,7 @@ func init() {
 	_log.Infoln("gRPC connection is starting...")
 
 	//Postresql connection
-	dbHandler = postgres.NewDbHandler(&configs.Postgresql, _log.WithFields(logrus.Fields{"service": "user_grpc"}))
+	dbHandler = postgres.NewDBHandler(&configs.Postgresql, _log.WithFields(logrus.Fields{"service": "user_grpc"}))
 	_db := dbHandler.New()
 	database.DB = _db
 	util.MigrateDB(_db, _log.WithFields(logrus.Fields{"service": "user_grpc"}))

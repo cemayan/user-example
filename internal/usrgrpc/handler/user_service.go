@@ -2,9 +2,9 @@ package handler
 
 import (
 	"encoding/json"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/dto"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/model"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/repo"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/dto"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/model"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/repo"
 	pb "github.com/cemayan/faceit-technical-test/protos/event"
 	"github.com/sirupsen/logrus"
 )
@@ -36,10 +36,13 @@ func (uh UserHandler) Handle() error {
 
 		createUser, err := uh.userRepo.CreateUser(&user)
 		if err != nil {
-			uh.eventServer.Send(&pb.Response{
+			err := uh.eventServer.Send(&pb.Response{
 				Data:       []byte(err.Error()),
 				StatusCode: 400,
 			})
+			if err != nil {
+				return err
+			}
 
 		} else {
 			response, _ := json.Marshal(createUser)
@@ -50,6 +53,7 @@ func (uh UserHandler) Handle() error {
 			if err != nil {
 				return err
 			}
+
 		}
 
 	case pb.EventName_USER_UPDATED:
@@ -57,31 +61,47 @@ func (uh UserHandler) Handle() error {
 		err := json.Unmarshal(uh.event.EventData, &user)
 		if err != nil {
 			uh.log.WithFields(logrus.Fields{"method": "Handle-Create"}).Errorln("An error occurred when unmarshalling the incoming eventdata")
-			return err
+			err := uh.eventServer.Send(&pb.Response{
+				Message:    err.Error(),
+				StatusCode: 400,
+			})
+			if err != nil {
+				return err
+			}
 		}
 
 		err = uh.userRepo.UpdateUser(uh.event.InternalId, &user)
 		if err != nil {
-			return err
+			err := uh.eventServer.Send(&pb.Response{
+				Message:    err.Error(),
+				StatusCode: 400,
+			})
+			if err != nil {
+				return err
+			}
 		} else {
 			err := uh.eventServer.Send(&pb.Response{
 				StatusCode: 200,
 			})
 			if err != nil {
-				uh.log.WithFields(logrus.Fields{"method": "Handle-Update"}).Errorln("An error occurred when unmarshalling the incoming eventdata")
 				return err
 			}
 		}
 	case pb.EventName_USER_DELETED:
 		err := uh.userRepo.DeleteUser(uh.event.InternalId)
 		if err != nil {
-			return err
+			err := uh.eventServer.Send(&pb.Response{
+				Message:    err.Error(),
+				StatusCode: 400,
+			})
+			if err != nil {
+				return err
+			}
 		} else {
 			err := uh.eventServer.Send(&pb.Response{
 				StatusCode: 200,
 			})
 			if err != nil {
-				uh.log.WithFields(logrus.Fields{"method": "Handle-Delete"}).Errorln("An error occurred when unmarshalling the incoming eventdata")
 				return err
 			}
 		}

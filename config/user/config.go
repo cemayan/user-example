@@ -23,7 +23,7 @@ type AppConfig struct {
 	Grpc       common.Grpc
 }
 
-// Load config file from given path
+// LoadConfig file from given path
 func (cfg Config) LoadConfig(filename string) (*viper.Viper, error) {
 
 	cfg.viper.SetConfigType("yaml")
@@ -42,7 +42,7 @@ func (cfg Config) LoadConfig(filename string) (*viper.Viper, error) {
 	return cfg.viper, nil
 }
 
-// Parse config file
+// ParseConfig comment
 func (cfg Config) ParseConfig(v *viper.Viper) (*AppConfig, error) {
 	var c AppConfig
 
@@ -55,7 +55,7 @@ func (cfg Config) ParseConfig(v *viper.Viper) (*AppConfig, error) {
 	return &c, nil
 }
 
-// Get config
+// GetConfig return config struct
 func (cfg Config) GetConfig(env string) (*AppConfig, error) {
 
 	var path string

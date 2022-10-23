@@ -17,7 +17,7 @@ definitions:
       password:
         type: string
     type: object
-  github.com_cemayan_faceit-technical-test_internal_user_grpc_model.User:
+  github.com_cemayan_faceit-technical-test_internal_user_model.User:
     properties:
       country:
         type: string
@@ -44,7 +44,7 @@ definitions:
     - nickname
     - password
     type: object
-  github.com_cemayan_faceit-technical-test_internal_user_model.User:
+  github.com_cemayan_faceit-technical-test_internal_usrgrpc_model.User:
     properties:
       country:
         type: string
@@ -127,7 +127,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github.com_cemayan_faceit-technical-test_internal_user_grpc_model.User'
+          $ref: '#/definitions/github.com_cemayan_faceit-technical-test_internal_usrgrpc_model.User'
       responses: {}
       summary: CreateUser
       tags:

@@ -36,8 +36,7 @@ type UserData struct {
 }
 
 func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
-	var base Base
-	base = Base{
+	var base = Base{
 		ID:        uuid.UUID{},
 		CreatedAt: time.Time{},
 		UpdatedAt: time.Time{},

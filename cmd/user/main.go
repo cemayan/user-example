@@ -39,7 +39,7 @@ func init() {
 	}
 
 	//Postresql connection
-	dbHandler = postgres.NewDbHandler(&configs.Postgresql, _log.WithFields(logrus.Fields{"service": "user"}))
+	dbHandler = postgres.NewDBHandler(&configs.Postgresql, _log.WithFields(logrus.Fields{"service": "user"}))
 	_db := dbHandler.New()
 	database.DB = _db
 	util.MigrateDB(_db, _log.WithFields(logrus.Fields{"service": "user"}))

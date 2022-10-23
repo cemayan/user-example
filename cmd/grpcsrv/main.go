@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 	"github.com/cemayan/faceit-technical-test/config/user"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/database"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/handler"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/repo"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/util"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/database"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/handler"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/repo"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/util"
 	"github.com/cemayan/faceit-technical-test/pkg/postgres"
 	pb "github.com/cemayan/faceit-technical-test/protos/event"
 	"github.com/sirupsen/logrus"
@@ -24,7 +24,6 @@ type server struct {
 var configs *user.AppConfig
 var v *viper.Viper
 var _log *logrus.Logger
-var grpcConn *grpc.ClientConn
 var dbHandler postgres.DBHandler
 var userRepo repo.GrpcUserRepository
 var userEventHandler handler.UserEventHandler
@@ -48,7 +47,7 @@ func init() {
 	}
 
 	//Postresql connection
-	dbHandler = postgres.NewDbHandler(&configs.Postgresql, _log.WithFields(logrus.Fields{"service": "grpc_event_server"}))
+	dbHandler = postgres.NewDBHandler(&configs.Postgresql, _log.WithFields(logrus.Fields{"service": "grpc_event_server"}))
 	_db := dbHandler.New()
 	database.DB = _db
 	util.MigrateDB(_db, _log.WithFields(logrus.Fields{"service": "grpc_event_server"}))

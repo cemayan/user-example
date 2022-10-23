@@ -2,8 +2,8 @@ package repo
 
 import (
 	"errors"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/dto"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/model"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/dto"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/model"
 	"github.com/cemayan/faceit-technical-test/pkg/common"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -17,7 +17,7 @@ type GrpcUserRepository interface {
 	CreateUser(user *model.User) (*model.User, error)
 	UpdateUser(id string, user *dto.UpdateUser) error
 	DeleteUser(id string) error
-	GetUserById(id string) (*model.User, error)
+	GetUserByID(id string) (*model.User, error)
 	hashPassword(password string) (string, error)
 	paginate(value interface{}, pagination *common.Pagination, db *gorm.DB) func(db *gorm.DB) *gorm.DB
 }
@@ -66,7 +66,7 @@ func (r GrpcUserrepo) GetAllUser(pagination common.Pagination) (*common.Paginati
 
 func (r GrpcUserrepo) UpdateUser(id string, userDTO *dto.UpdateUser) error {
 
-	user, err := r.GetUserById(id)
+	user, err := r.GetUserByID(id)
 
 	if user == nil || err != nil {
 		return err
@@ -99,7 +99,7 @@ func (r GrpcUserrepo) UpdateUser(id string, userDTO *dto.UpdateUser) error {
 }
 
 func (r GrpcUserrepo) DeleteUser(id string) error {
-	user, err := r.GetUserById(id)
+	user, err := r.GetUserByID(id)
 
 	if err != nil {
 		return err
@@ -127,8 +127,8 @@ func (r GrpcUserrepo) CreateUser(user *model.User) (*model.User, error) {
 	return user, nil
 }
 
-// GetUserById returns user based on given id
-func (r GrpcUserrepo) GetUserById(id string) (*model.User, error) {
+// GetUserByID returns user based on given id
+func (r GrpcUserrepo) GetUserByID(id string) (*model.User, error) {
 	var user model.User
 	_id, err := uuid.Parse(id)
 

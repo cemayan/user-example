@@ -35,10 +35,8 @@ func SetupRoutes(app *fiber.App, log *log.Entry, configs *user.AppConfig) {
 
 	userRepo := repo.NewUserRepo(database.DB, log)
 
-	var validate *validator.Validate
-	validate = validator.New()
-	var userSvc service.UserService
-	userSvc = service.NewUserService(userRepo, validate, log, configs)
+	var validate = validator.New()
+	var userSvc = service.NewUserService(userRepo, validate, log, configs)
 
 	v1.Get("/health", userSvc.HealthCheck)
 

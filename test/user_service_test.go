@@ -9,7 +9,7 @@ import (
 	"github.com/cemayan/faceit-technical-test/internal/user/router"
 	"github.com/cemayan/faceit-technical-test/internal/user/service"
 	"github.com/cemayan/faceit-technical-test/internal/user/util"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/dto"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/dto"
 	"github.com/cemayan/faceit-technical-test/pkg/postgres"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -61,7 +61,7 @@ func (ts *e2eTestSuite) SetupSuite() {
 	router.SetupRoutes(ts.app, log.New().WithFields(log.Fields{"service": "user"}), appConfig)
 
 	//Postresql connection
-	ts.dbHandler = postgres.NewDbHandler(&ts.configs.Postgresql, log.New().WithFields(log.Fields{"service": "user"}))
+	ts.dbHandler = postgres.NewDBHandler(&ts.configs.Postgresql, log.New().WithFields(log.Fields{"service": "user"}))
 	db := ts.dbHandler.New()
 	ts.db = db
 
@@ -106,21 +106,6 @@ func (ts *e2eTestSuite) getUpdateUserModel() dto.UpdateUser {
 	return user
 }
 
-func (ts *e2eTestSuite) getUpdateUserRawPasswordModel() dto.UpdateUser {
-	var user dto.UpdateUser
-	user.NickName = "test4"
-	user.Password = "123131"
-	user.Email = "user@test.com"
-	return user
-}
-
-func (ts *e2eTestSuite) getWrongAuthModel() model.LoginInput {
-	var login model.LoginInput
-	login.Nickname = "test"
-	login.Password = "1234"
-	return login
-}
-
 func (ts *e2eTestSuite) saveUserModel() model.User {
 	var user model.User
 
@@ -128,18 +113,6 @@ func (ts *e2eTestSuite) saveUserModel() model.User {
 	user.Password = password
 	user.NickName = "test"
 	user.Email = "user@test.com"
-	user.Country = "UK"
-	ts.db.Create(&user)
-	return user
-}
-
-func (ts *e2eTestSuite) saveUserModel2() model.User {
-	var user model.User
-
-	password, _ := ts.usrSvc.HashPassword("123")
-	user.Password = password
-	user.NickName = "test2"
-	user.Email = "user2@test.com"
 	user.Country = "UK"
 	ts.db.Create(&user)
 	return user
@@ -471,7 +444,7 @@ func (ts *e2eTestSuite) TestUserService_GetUser() {
 		return
 	}
 
-	answer, err := io.ReadAll(resp.Body)
+	answer, _ := io.ReadAll(resp.Body)
 
 	var response model.Response
 	err = json.Unmarshal(answer, &response)
@@ -510,7 +483,7 @@ func (ts *e2eTestSuite) TestUserService_GetUserWrongId() {
 		return
 	}
 
-	answer, err := io.ReadAll(resp.Body)
+	answer, _ := io.ReadAll(resp.Body)
 
 	var response model.Response
 	err = json.Unmarshal(answer, &response)

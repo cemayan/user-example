@@ -17,11 +17,11 @@ services:
       - ../../init/init.sql:/docker-entrypoint-initdb.d/init.sql
     networks:
       - faceit
-  grpc_server:
+  grpcsrvr:
     build:
       context: ../
-      dockerfile: build/grpc_event_server/Dockerfile
-    container_name: grpc_server
+      dockerfile: build/grpcsrv/Dockerfile
+    container_name: grpcsrv
     pull_policy: build
     restart: always
     environment:
@@ -33,7 +33,7 @@ services:
   grpc_server_test:
     build:
       context: ../
-      dockerfile: build/grpc_event_server/Dockerfile
+      dockerfile: build/grpcsrv/Dockerfile
     container_name: grpc_server_test
     pull_policy: build
     restart: always
@@ -60,12 +60,12 @@ services:
       - postgresql
     networks:
       - faceit
-  user_grpc:
+  usrgrpc:
     build:
       context: ../
-      dockerfile:  build/user_grpc/Dockerfile
-    container_name: user_grpc
-    hostname: user_grpc
+      dockerfile: build/usrgrpc/Dockerfile
+    container_name: usrgrpc
+    hostname: usrgrpc
     pull_policy: build
     ports:
       - "8092:8092"

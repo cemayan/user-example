@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"github.com/cemayan/faceit-technical-test/config/user"
 
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/dto"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/model"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/repo"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/router"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/service"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/util"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/dto"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/model"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/repo"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/router"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/service"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/util"
 	"github.com/cemayan/faceit-technical-test/pkg/postgres"
 	pb "github.com/cemayan/faceit-technical-test/protos/event"
 	"github.com/go-playground/validator/v10"
@@ -41,7 +41,6 @@ type e2eGrpcTestSuite struct {
 	v         *viper.Viper
 	dbHandler postgres.DBHandler
 	validate  *validator.Validate
-	grpcConn  *grpc.ClientConn
 }
 
 func TestE2EGrpcTestSuite(t *testing.T) {
@@ -68,7 +67,7 @@ func (ts *e2eGrpcTestSuite) SetupSuite() {
 	}
 
 	//Postresql connection
-	ts.dbHandler = postgres.NewDbHandler(&ts.configs.Postgresql, log.New().WithFields(log.Fields{"service": "user_grpc"}))
+	ts.dbHandler = postgres.NewDBHandler(&ts.configs.Postgresql, log.New().WithFields(log.Fields{"service": "user_grpc"}))
 	db := ts.dbHandler.New()
 	ts.db = db
 
@@ -127,21 +126,6 @@ func (ts *e2eGrpcTestSuite) getUpdateUserModel() dto.UpdateUser {
 	return user
 }
 
-func (ts *e2eGrpcTestSuite) getUpdateUserRawPasswordModel() dto.UpdateUser {
-	var user dto.UpdateUser
-	user.NickName = "test4"
-	user.Password = "123131"
-	user.Email = "user@test.com"
-	return user
-}
-
-func (ts *e2eGrpcTestSuite) getWrongAuthModel() model.LoginInput {
-	var login model.LoginInput
-	login.Nickname = "test"
-	login.Password = "1234"
-	return login
-}
-
 func (ts *e2eGrpcTestSuite) saveUserModel() model.User {
 	var user model.User
 
@@ -149,18 +133,6 @@ func (ts *e2eGrpcTestSuite) saveUserModel() model.User {
 	user.Password = password
 	user.NickName = "test"
 	user.Email = "user@test.com"
-	user.Country = "UK"
-	ts.db.Create(&user)
-	return user
-}
-
-func (ts *e2eGrpcTestSuite) saveUserModel2() model.User {
-	var user model.User
-
-	password, _ := ts.usrSvc.HashPassword("123")
-	user.Password = password
-	user.NickName = "test2"
-	user.Email = "user2@test.com"
 	user.Country = "UK"
 	ts.db.Create(&user)
 	return user
@@ -493,7 +465,7 @@ func (ts *e2eGrpcTestSuite) TestUserService_GetUser() {
 		return
 	}
 
-	answer, err := io.ReadAll(resp.Body)
+	answer, _ := io.ReadAll(resp.Body)
 
 	var response model.Response
 	err = json.Unmarshal(answer, &response)
@@ -532,7 +504,7 @@ func (ts *e2eGrpcTestSuite) TestUserService_GetUserWrongId() {
 		return
 	}
 
-	answer, err := io.ReadAll(resp.Body)
+	answer, _ := io.ReadAll(resp.Body)
 
 	var response model.Response
 	err = json.Unmarshal(answer, &response)

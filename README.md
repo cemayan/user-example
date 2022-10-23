@@ -23,8 +23,8 @@ You can use this API in 3 ways:
 - ---
 
 - If you want to use HTTP you should use **user**  microservice.
-- If you want to use HTTP with gRPC you should use **user_grpc**  microservice.
-- If you want to use  gRPC you should use **gRPCEventServer** microservice.
+- If you want to use HTTP with gRPC you should use **usrgrpc**  microservice.
+- If you want to use  gRPC you should use **gRPCServer** microservice.
 
 
 > You can use user,user_grpc api with auth on this branch https://github.com/cemayan/faceit-technical-test/tree/auth
@@ -68,8 +68,7 @@ For gPRC server:
 
 You should exec to **grpc_server_test** container. (**user_grpc** needs to have one grpc_server for testing)
 ```shell
- ENV="test" go test -v test/user_grpc_service_test.go  -coverpkg=./internal/user/... -coverprofile=coverage.out 
- 
+ENV="test" go test -v test/usrgrpc_service_test.go  -coverpkg=./internal/usrgrpc/... -coverprofile=coverage.out  
 ```
 
 ---

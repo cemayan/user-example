@@ -15,7 +15,7 @@ type UserRepository interface {
 	CreateUser(user *model.User) (*model.User, error)
 	UpdateUser(user *model.User) error
 	DeleteUser(id string) error
-	GetUserById(id string) (*model.User, error)
+	GetUserByID(id string) (*model.User, error)
 	paginate(value interface{}, pagination *common.Pagination, db *gorm.DB) func(db *gorm.DB) *gorm.DB
 }
 
@@ -69,7 +69,7 @@ func (r Userrepo) UpdateUser(user *model.User) error {
 
 // DeleteUser returns error if deleting process get an error
 func (r Userrepo) DeleteUser(id string) error {
-	user, err := r.GetUserById(id)
+	user, err := r.GetUserByID(id)
 
 	if err != nil {
 		return err
@@ -90,8 +90,8 @@ func (r Userrepo) CreateUser(user *model.User) (*model.User, error) {
 	return user, nil
 }
 
-// GetUserById returns user based on given id
-func (r Userrepo) GetUserById(id string) (*model.User, error) {
+// GetUserByID returns user based on given id
+func (r Userrepo) GetUserByID(id string) (*model.User, error) {
 	var user model.User
 	_id, err := uuid.Parse(id)
 

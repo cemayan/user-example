@@ -5,5 +5,5 @@ postgresql:
   PORT: 5438
   USER: postgres
 grpc:
-  ADDR: grpc_server
+  ADDR: grpcsrv
   PORT: 50051

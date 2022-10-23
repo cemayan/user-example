@@ -12,7 +12,7 @@ RUN go mod download
 
 COPY . .
 
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -o /app/grpc-server cmd/grpc_event_server/main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags "-s -w" -o /app/grpc-server cmd/grpcsrv/main.go
 
 FROM scratch
 COPY --from=builder /app/config/user/config-docker.yaml /app/config/user/config-docker.yaml

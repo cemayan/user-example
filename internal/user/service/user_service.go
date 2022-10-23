@@ -88,7 +88,7 @@ func (s UserSvc) HashPassword(password string) (string, error) {
 func (s UserSvc) GetUser(c *fiber.Ctx) error {
 
 	id := c.Params("id")
-	user, err := s.repository.GetUserById(id)
+	user, err := s.repository.GetUserByID(id)
 	if user == nil || err != nil {
 		s.log.WithFields(log.Fields{"method": "GetUser"}).Errorf("No user found with %s \n", id)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
@@ -204,7 +204,7 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err := s.repository.GetUserById(id)
+	user, err := s.repository.GetUserByID(id)
 	if user == nil || err != nil {
 		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("No user found with %s", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
@@ -252,7 +252,7 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 				LastName:  user.LastName,
 				Country:   user.Country,
 			},
-			Message: fmt.Sprintf("User successfully updated"),
+			Message: "User successfully updated",
 		})
 	}
 }

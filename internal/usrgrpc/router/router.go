@@ -2,9 +2,9 @@ package router
 
 import (
 	"github.com/cemayan/faceit-technical-test/config/user"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/database"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/repo"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/service"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/database"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/repo"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/service"
 	pb "github.com/cemayan/faceit-technical-test/protos/event"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/adaptor/v2"
@@ -20,7 +20,7 @@ func grpcPrometheusHandler() http.Handler {
 	return promhttp.Handler()
 }
 
-// SetupRoutes creates the fiber's routes
+// SetupGrpcRoutes creates the fiber's routes
 // api/v1 is root group.
 // Before the reach services interface is configured
 func SetupGrpcRoutes(app *fiber.App, _log *log.Entry, client pb.EventGrpcServiceClient, configs *user.AppConfig) {
@@ -34,11 +34,9 @@ func SetupGrpcRoutes(app *fiber.App, _log *log.Entry, client pb.EventGrpcService
 
 	userRepo := repo.NewGrpcUserRepo(database.DB, _log)
 
-	var validate *validator.Validate
-	validate = validator.New()
+	var validate = validator.New()
 
-	var userSvc service.GrpcUserService
-	userSvc = service.NewGrpcUserService(userRepo, validate, client, _log, configs)
+	var userSvc = service.NewGrpcUserService(userRepo, validate, client, _log, configs)
 
 	userGroup := v1.Group("/user")
 	userGroup.Get("/", userSvc.GetAllUser)

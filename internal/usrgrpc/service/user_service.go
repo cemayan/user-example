@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/cemayan/faceit-technical-test/config/user"
-	_ "github.com/cemayan/faceit-technical-test/internal/user_grpc/dto"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/model"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/repo"
-	"github.com/cemayan/faceit-technical-test/internal/user_grpc/util"
+	_ "github.com/cemayan/faceit-technical-test/internal/usrgrpc/dto"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/model"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/repo"
+	"github.com/cemayan/faceit-technical-test/internal/usrgrpc/util"
 	"github.com/cemayan/faceit-technical-test/pkg/common"
-	"github.com/cemayan/faceit-technical-test/protos/event"
 	pb "github.com/cemayan/faceit-technical-test/protos/event"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -28,7 +27,7 @@ type GrpcUserService interface {
 	DeleteUser(c *fiber.Ctx) error
 }
 
-// A UserSvc  contains the required dependencies for this service
+// A GrpcUserSvc  contains the required dependencies for this service
 type GrpcUserSvc struct {
 	repository repo.GrpcUserRepository
 	validate   *validator.Validate
@@ -93,7 +92,7 @@ func (s GrpcUserSvc) HealthCheck(c *fiber.Ctx) error {
 func (s GrpcUserSvc) GetUser(c *fiber.Ctx) error {
 
 	id := c.Params("id")
-	user, err := s.repository.GetUserById(id)
+	user, err := s.repository.GetUserByID(id)
 	if user == nil || err != nil {
 		s.log.WithFields(log.Fields{"method": "GetUser"}).Errorf("No user found with %s \n", id)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
@@ -270,11 +269,19 @@ func (s GrpcUserSvc) UpdateUser(c *fiber.Ctx) error {
 
 		if recv.StatusCode >= 400 {
 			s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("An error occured %s \n", string(recv.Data))
-			return c.Status(int(recv.StatusCode)).JSON(&model.Response{
-				Data:       string(recv.Data),
-				Message:    recv.Message,
-				StatusCode: int(recv.StatusCode),
-			})
+
+			if string(recv.Data) != "" {
+				return c.Status(int(recv.StatusCode)).JSON(&model.Response{
+					Data:       string(recv.Data),
+					Message:    recv.Message,
+					StatusCode: int(recv.StatusCode),
+				})
+			} else {
+				return c.Status(int(recv.StatusCode)).JSON(&model.Response{
+					Message:    recv.Message,
+					StatusCode: int(recv.StatusCode),
+				})
+			}
 		}
 
 		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Infof("User successfully updated \n")
@@ -329,11 +336,18 @@ func (s GrpcUserSvc) DeleteUser(c *fiber.Ctx) error {
 
 		if recv.StatusCode >= 400 {
 			s.log.WithFields(log.Fields{"method": "DeleteUser"}).Errorf("An error occured %s \n", string(recv.Data))
-			return c.Status(int(recv.StatusCode)).JSON(&model.Response{
-				Data:       string(recv.Data),
-				Message:    recv.Message,
-				StatusCode: int(recv.StatusCode),
-			})
+			if string(recv.Data) != "" {
+				return c.Status(int(recv.StatusCode)).JSON(&model.Response{
+					Data:       string(recv.Data),
+					Message:    recv.Message,
+					StatusCode: int(recv.StatusCode),
+				})
+			} else {
+				return c.Status(int(recv.StatusCode)).JSON(&model.Response{
+					Message:    recv.Message,
+					StatusCode: int(recv.StatusCode),
+				})
+			}
 		}
 
 		s.log.WithFields(log.Fields{"method": "DeleteUser"}).Errorf("User successfully deleted %v \n", id)
@@ -345,7 +359,7 @@ func (s GrpcUserSvc) DeleteUser(c *fiber.Ctx) error {
 
 }
 
-func NewGrpcUserService(rep repo.GrpcUserRepository, validate *validator.Validate, grpcClient event.EventGrpcServiceClient, log *log.Entry, configs *user.AppConfig) GrpcUserService {
+func NewGrpcUserService(rep repo.GrpcUserRepository, validate *validator.Validate, grpcClient pb.EventGrpcServiceClient, log *log.Entry, configs *user.AppConfig) GrpcUserService {
 	return &GrpcUserSvc{
 		repository: rep,
 		validate:   validate,

@@ -20,12 +20,12 @@ const (
 // ConditionQuery represents  query in DB such as "country = ?"
 // ConditionValue represents  query value in DB such as "UK"
 type Pagination struct {
-	Limit      int               `json:"limit,omitempty;query:limit"`
-	Page       int               `json:"page,omitempty;query:page"`
-	SColumn    SortingColumnName `json:"sColumn,omitempty;query:sColumn"`
-	SType      SortingColumnType `json:"sType,omitempty;query:sType"`
-	CQuery     string            `json:"cQuery,omitempty;query:cQuery"`
-	CValue     string            `json:"cVal,omitempty;query:cVal"`
+	Limit      int               `json:"limit,omitempty"`
+	Page       int               `json:"page,omitempty"`
+	SColumn    SortingColumnName `json:"sColumn,omitempty"`
+	SType      SortingColumnType `json:"sType,omitempty"`
+	CQuery     string            `json:"cQuery,omitempty"`
+	CValue     string            `json:"cVal,omitempty"`
 	TotalRows  int64             `json:"total_rows"`
 	TotalPages int               `json:"total_pages"`
 	Rows       interface{}       `json:"rows"`

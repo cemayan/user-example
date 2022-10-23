@@ -52,6 +52,6 @@ func (d DBService) New() *gorm.DB {
 	return db
 }
 
-func NewDbHandler(configs *common.Postgresql, _log *log.Entry) DBHandler {
+func NewDBHandler(configs *common.Postgresql, _log *log.Entry) DBHandler {
 	return &DBService{configs: configs, _log: _log}
 }
