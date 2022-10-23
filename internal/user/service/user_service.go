@@ -88,8 +88,8 @@ func (s UserSvc) HashPassword(password string) (string, error) {
 func (s UserSvc) GetUser(c *fiber.Ctx) error {
 
 	id := c.Params("id")
-	user, err := s.repository.GetUserByID(id)
-	if user == nil || err != nil {
+	userModel, err := s.repository.GetUserByID(id)
+	if userModel == nil || err != nil {
 		s.log.WithFields(log.Fields{"method": "GetUser"}).Errorf("No user found with %s \n", id)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("No user found with %v", id),
@@ -100,12 +100,12 @@ func (s UserSvc) GetUser(c *fiber.Ctx) error {
 	return c.JSON(model.Response{
 		StatusCode: 200,
 		Data: model.UserData{
-			ID:        user.ID,
-			NickName:  user.NickName,
-			Email:     user.Email,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Country:   user.Country,
+			ID:        userModel.ID,
+			NickName:  userModel.NickName,
+			Email:     userModel.Email,
+			FirstName: userModel.FirstName,
+			LastName:  userModel.LastName,
+			Country:   userModel.Country,
 		},
 	})
 }
@@ -118,8 +118,8 @@ func (s UserSvc) GetUser(c *fiber.Ctx) error {
 // @Router   / [post]
 func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 
-	user := new(model.User)
-	if err := c.BodyParser(user); err != nil {
+	userReq := new(model.User)
+	if err := c.BodyParser(userReq); err != nil {
 		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Review your input %s", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("Review your input %s", err),
@@ -127,7 +127,7 @@ func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	err := s.validate.Struct(user)
+	err := s.validate.Struct(userReq)
 
 	if err != nil {
 		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Review your payload %s", err)
@@ -137,7 +137,7 @@ func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	hash, err := s.HashPassword(user.Password)
+	hash, err := s.HashPassword(userReq.Password)
 	if err != nil {
 		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Couldn't hash password %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
@@ -146,10 +146,10 @@ func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	user.Password = hash
+	userReq.Password = hash
 
-	user, err = s.repository.CreateUser(user)
-	if user == nil || err != nil {
+	userResp, err := s.repository.CreateUser(userReq)
+	if userResp == nil || err != nil {
 		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Couldn't create use %s \n", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("Couldn't create use %s", err),
@@ -158,20 +158,20 @@ func (s UserSvc) CreateUser(c *fiber.Ctx) error {
 	}
 
 	newUser := dto.NewUser{
-		Email:    user.Email,
-		Nickname: user.NickName,
+		Email:    userResp.Email,
+		Nickname: userResp.NickName,
 	}
 
 	s.log.Infof("User created %s \n", newUser)
 	return c.Status(fiber.StatusCreated).JSON(model.Response{
 		StatusCode: 201,
 		Data: model.UserData{
-			ID:        user.ID,
-			NickName:  user.NickName,
-			Email:     user.Email,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Country:   user.Country,
+			ID:        userResp.ID,
+			NickName:  userResp.NickName,
+			Email:     userResp.Email,
+			FirstName: userResp.FirstName,
+			LastName:  userResp.LastName,
+			Country:   userResp.Country,
 		},
 		Message: fmt.Sprintf("User created %s", newUser),
 	})
@@ -204,8 +204,8 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	user, err := s.repository.GetUserByID(id)
-	if user == nil || err != nil {
+	userModel, err := s.repository.GetUserByID(id)
+	if userModel == nil || err != nil {
 		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("No user found with %s", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			StatusCode: 400,
@@ -215,25 +215,25 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 
 	if userDTO.Password != "" {
 		hash, _ := s.HashPassword(userDTO.Password)
-		user.Password = hash
+		userModel.Password = hash
 	}
 	if userDTO.NickName != "" {
-		user.NickName = userDTO.NickName
+		userModel.NickName = userDTO.NickName
 	}
 	if userDTO.Email != "" {
-		user.Email = userDTO.Email
+		userModel.Email = userDTO.Email
 	}
 	if userDTO.FirstName != "" {
-		user.FirstName = userDTO.FirstName
+		userModel.FirstName = userDTO.FirstName
 	}
 	if userDTO.LastName != "" {
-		user.FirstName = userDTO.FirstName
+		userModel.FirstName = userDTO.FirstName
 	}
 	if userDTO.Country != "" {
-		user.Country = userDTO.Country
+		userModel.Country = userDTO.Country
 	}
 
-	err = s.repository.UpdateUser(user)
+	err = s.repository.UpdateUser(userModel)
 	if err != nil {
 		s.log.WithFields(log.Fields{"method": "UpdateUser"}).Errorf("While user is updating an error occured: %s", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
@@ -245,12 +245,12 @@ func (s UserSvc) UpdateUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusOK).JSON(model.Response{
 			StatusCode: 200,
 			Data: model.UserData{
-				ID:        user.ID,
-				NickName:  user.NickName,
-				Email:     user.Email,
-				FirstName: user.FirstName,
-				LastName:  user.LastName,
-				Country:   user.Country,
+				ID:        userModel.ID,
+				NickName:  userModel.NickName,
+				Email:     userModel.Email,
+				FirstName: userModel.FirstName,
+				LastName:  userModel.LastName,
+				Country:   userModel.Country,
 			},
 			Message: "User successfully updated",
 		})

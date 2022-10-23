@@ -85,37 +85,37 @@ func (ts *e2eTestSuite) getRecords() []model.User {
 }
 
 func (ts *e2eTestSuite) getUserModel() model.User {
-	var user model.User
-	user.Password = "123"
-	user.NickName = "test"
-	user.Email = "user@test.com"
-	user.Country = "UK"
-	return user
+	var userModel model.User
+	userModel.Password = "123"
+	userModel.NickName = "test"
+	userModel.Email = "user@test.com"
+	userModel.Country = "UK"
+	return userModel
 }
 
 func (ts *e2eTestSuite) getWrongUserModel() model.User {
-	var user model.User
-	user.Country = "UK"
-	return user
+	var userModel model.User
+	userModel.Country = "UK"
+	return userModel
 }
 
 func (ts *e2eTestSuite) getUpdateUserModel() dto.UpdateUser {
-	var user dto.UpdateUser
-	user.NickName = "test4"
-	user.Email = "user@test.com"
-	return user
+	var userModel dto.UpdateUser
+	userModel.NickName = "test4"
+	userModel.Email = "user@test.com"
+	return userModel
 }
 
 func (ts *e2eTestSuite) saveUserModel() model.User {
-	var user model.User
+	var userModel model.User
 
 	password, _ := ts.usrSvc.HashPassword("123")
-	user.Password = password
-	user.NickName = "test"
-	user.Email = "user@test.com"
-	user.Country = "UK"
-	ts.db.Create(&user)
-	return user
+	userModel.Password = password
+	userModel.NickName = "test"
+	userModel.Email = "user@test.com"
+	userModel.Country = "UK"
+	ts.db.Create(&userModel)
+	return userModel
 }
 
 func (ts *e2eTestSuite) TestUserService_Create() {
@@ -452,19 +452,19 @@ func (ts *e2eTestSuite) TestUserService_GetUser() {
 		return
 	}
 
-	var user model.User
+	var userM model.User
 	str, err := json.Marshal(response.Data)
 	if err != nil {
 		return
 	}
 
-	err = json.Unmarshal(str, &user)
+	err = json.Unmarshal(str, &userM)
 	if err != nil {
 		return
 	}
 
 	ts.Equal(fiber.StatusOK, resp.StatusCode)
-	ts.Equal("test", user.NickName)
+	ts.Equal("test", userM.NickName)
 
 }
 
@@ -491,13 +491,13 @@ func (ts *e2eTestSuite) TestUserService_GetUserWrongId() {
 		return
 	}
 
-	var user model.User
+	var userModel model.User
 	str, err := json.Marshal(response.Data)
 	if err != nil {
 		return
 	}
 
-	err = json.Unmarshal(str, &user)
+	err = json.Unmarshal(str, &userModel)
 	if err != nil {
 		return
 	}

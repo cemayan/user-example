@@ -30,8 +30,6 @@ import (
 	"testing"
 )
 
-var userRepo repo.GrpcUserRepository
-
 type e2eGrpcTestSuite struct {
 	suite.Suite
 	app       *fiber.App
@@ -71,8 +69,7 @@ func (ts *e2eGrpcTestSuite) SetupSuite() {
 	db := ts.dbHandler.New()
 	ts.db = db
 
-	_userRepo := repo.NewGrpcUserRepo(ts.db, log.New().WithFields(log.Fields{"service": "user"}))
-	userRepo = _userRepo
+	userRepo := repo.NewGrpcUserRepo(ts.db, log.New().WithFields(log.Fields{"service": "user"}))
 
 	util.MigrateDB(ts.db, log.New().WithFields(log.Fields{"service": "user"}))
 
@@ -83,7 +80,7 @@ func (ts *e2eGrpcTestSuite) SetupSuite() {
 
 	grpcClient := pb.NewEventGrpcServiceClient(_grpcConn)
 
-	userSvc := service.NewGrpcUserService(_userRepo, ts.validate, grpcClient, log.New().WithFields(log.Fields{"service": "user_grpc"}), ts.configs)
+	userSvc := service.NewGrpcUserService(userRepo, ts.validate, grpcClient, log.New().WithFields(log.Fields{"service": "user_grpc"}), ts.configs)
 	ts.usrSvc = userSvc
 
 	log.Infoln("gRPC server is starting...")
@@ -105,37 +102,37 @@ func (ts *e2eGrpcTestSuite) getRecords() []model.User {
 }
 
 func (ts *e2eGrpcTestSuite) getUserModel() model.User {
-	var user model.User
-	user.Password = "123"
-	user.NickName = "test"
-	user.Email = "user@test.com"
-	user.Country = "UK"
-	return user
+	var userModel model.User
+	userModel.Password = "123"
+	userModel.NickName = "test"
+	userModel.Email = "user@test.com"
+	userModel.Country = "UK"
+	return userModel
 }
 
 func (ts *e2eGrpcTestSuite) getWrongUserModel() model.User {
-	var user model.User
-	user.Country = "UK"
-	return user
+	var userModel model.User
+	userModel.Country = "UK"
+	return userModel
 }
 
 func (ts *e2eGrpcTestSuite) getUpdateUserModel() dto.UpdateUser {
-	var user dto.UpdateUser
-	user.NickName = "test4"
-	user.Email = "user@test.com"
-	return user
+	var userModel dto.UpdateUser
+	userModel.NickName = "test4"
+	userModel.Email = "user@test.com"
+	return userModel
 }
 
 func (ts *e2eGrpcTestSuite) saveUserModel() model.User {
-	var user model.User
+	var userModel model.User
 
 	password, _ := ts.usrSvc.HashPassword("123")
-	user.Password = password
-	user.NickName = "test"
-	user.Email = "user@test.com"
-	user.Country = "UK"
-	ts.db.Create(&user)
-	return user
+	userModel.Password = password
+	userModel.NickName = "test"
+	userModel.Email = "user@test.com"
+	userModel.Country = "UK"
+	ts.db.Create(&userModel)
+	return userModel
 }
 
 func (ts *e2eGrpcTestSuite) TestUserService_Create() {
@@ -473,19 +470,19 @@ func (ts *e2eGrpcTestSuite) TestUserService_GetUser() {
 		return
 	}
 
-	var user model.User
+	var userM model.User
 	str, err := json.Marshal(response.Data)
 	if err != nil {
 		return
 	}
 
-	err = json.Unmarshal(str, &user)
+	err = json.Unmarshal(str, &userM)
 	if err != nil {
 		return
 	}
 
 	ts.Equal(fiber.StatusOK, resp.StatusCode)
-	ts.Equal("test", user.NickName)
+	ts.Equal("test", userM.NickName)
 
 }
 
@@ -512,13 +509,13 @@ func (ts *e2eGrpcTestSuite) TestUserService_GetUserWrongId() {
 		return
 	}
 
-	var user model.User
+	var userModel model.User
 	str, err := json.Marshal(response.Data)
 	if err != nil {
 		return
 	}
 
-	err = json.Unmarshal(str, &user)
+	err = json.Unmarshal(str, &userModel)
 	if err != nil {
 		return
 	}

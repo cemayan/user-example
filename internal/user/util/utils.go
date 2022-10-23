@@ -13,12 +13,21 @@ func MigrateDB(db *gorm.DB, log *log.Entry) {
 		// When DB connection is successful then model migration is started
 		isExist := db.Migrator().HasTable(&model.User{})
 		if isExist {
-			db.Migrator().DropTable(&model.User{})
+			err := db.Migrator().DropTable(&model.User{})
+			if err != nil {
+				return
+			}
 		}
-		db.AutoMigrate(&model.User{})
+		err := db.AutoMigrate(&model.User{})
+		if err != nil {
+			return
+		}
 		log.Infoln("Database Migrated")
 	} else {
-		db.AutoMigrate(&model.User{})
+		err := db.AutoMigrate(&model.User{})
+		if err != nil {
+			return
+		}
 		log.Infoln("Database Migrated")
 	}
 }

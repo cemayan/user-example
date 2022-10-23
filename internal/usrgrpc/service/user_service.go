@@ -92,8 +92,8 @@ func (s GrpcUserSvc) HealthCheck(c *fiber.Ctx) error {
 func (s GrpcUserSvc) GetUser(c *fiber.Ctx) error {
 
 	id := c.Params("id")
-	user, err := s.repository.GetUserByID(id)
-	if user == nil || err != nil {
+	userModel, err := s.repository.GetUserByID(id)
+	if userModel == nil || err != nil {
 		s.log.WithFields(log.Fields{"method": "GetUser"}).Errorf("No user found with %s \n", id)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("No user found with %v", id),
@@ -104,12 +104,12 @@ func (s GrpcUserSvc) GetUser(c *fiber.Ctx) error {
 	return c.JSON(model.Response{
 		StatusCode: 200,
 		Data: model.UserData{
-			ID:        user.ID,
-			NickName:  user.NickName,
-			Email:     user.Email,
-			FirstName: user.FirstName,
-			LastName:  user.LastName,
-			Country:   user.Country,
+			ID:        userModel.ID,
+			NickName:  userModel.NickName,
+			Email:     userModel.Email,
+			FirstName: userModel.FirstName,
+			LastName:  userModel.LastName,
+			Country:   userModel.Country,
 		},
 	})
 }
@@ -122,8 +122,8 @@ func (s GrpcUserSvc) GetUser(c *fiber.Ctx) error {
 // @Router   / [post]
 func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 
-	user := new(model.User)
-	if err := c.BodyParser(user); err != nil {
+	userReq := new(model.User)
+	if err := c.BodyParser(userReq); err != nil {
 		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Review your input %s", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("Review your input %s", err),
@@ -131,7 +131,7 @@ func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 		})
 	}
 
-	err := s.validate.Struct(user)
+	err := s.validate.Struct(userReq)
 
 	if err != nil {
 		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Review your payload %s", err)
@@ -182,8 +182,8 @@ func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 			})
 		}
 
-		var user model.User
-		err = json.Unmarshal(recv.Data, &user)
+		var userResp model.User
+		err = json.Unmarshal(recv.Data, &userResp)
 		if err != nil {
 			s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Couldn't unmarshall to recv.Data %s \n", err)
 			return c.Status(fiber.StatusBadRequest).JSON(&model.Response{
@@ -192,16 +192,16 @@ func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 			})
 		}
 
-		s.log.WithFields(log.Fields{"method": "CreateUser"}).Infof("User created %v \n", user)
+		s.log.WithFields(log.Fields{"method": "CreateUser"}).Infof("User created %v \n", userResp)
 		return c.Status(fiber.StatusCreated).JSON(&model.Response{
 			Message: "User created!",
 			Data: model.UserData{
-				ID:        user.ID,
-				NickName:  user.NickName,
-				Email:     user.Email,
-				FirstName: user.FirstName,
-				LastName:  user.LastName,
-				Country:   user.Country,
+				ID:        userResp.ID,
+				NickName:  userResp.NickName,
+				Email:     userResp.Email,
+				FirstName: userResp.FirstName,
+				LastName:  userResp.LastName,
+				Country:   userResp.Country,
 			},
 			StatusCode: 201,
 		})
@@ -216,8 +216,8 @@ func (s GrpcUserSvc) CreateUser(c *fiber.Ctx) error {
 // @Router   /{id} [put]
 func (s GrpcUserSvc) UpdateUser(c *fiber.Ctx) error {
 
-	user := new(model.User)
-	if err := c.BodyParser(user); err != nil {
+	userReq := new(model.User)
+	if err := c.BodyParser(userReq); err != nil {
 		s.log.WithFields(log.Fields{"method": "CreateUser"}).Errorf("Review your input %s", err)
 		return c.Status(fiber.StatusBadRequest).JSON(model.Response{
 			Message:    fmt.Sprintf("Review your input %s", err),
