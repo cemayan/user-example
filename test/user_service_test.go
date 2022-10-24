@@ -331,7 +331,7 @@ func (ts *e2eTestSuite) TestUserService_UpdateWrongId() {
 	ts.removeAllRecords()
 	ts.saveUserModel()
 
-	ts.app.Put("/user", ts.usrSvc.CreateUser)
+	ts.app.Put("/user", ts.usrSvc.UpdateUser)
 
 	marshal, err := json.Marshal("test")
 	if err != nil {
